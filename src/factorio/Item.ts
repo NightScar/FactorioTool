@@ -17,7 +17,9 @@ class Item {
         let ret: Formula[] = [];
         this.formulaList.forEach(f => {
             let fList: Formula[] = f.expandToBasic();
+            console.log('bulid basic: expand result size: ' + fList.length);
             fList.forEach(f1 => {
+                f1.number = f1.number / this.productNumber;
                 Formula.merge(ret, f1);
                 console.log(
                     'buildBasic: merge : ' + f1.item.name + ' ' + f1.number,
