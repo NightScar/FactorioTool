@@ -1,6 +1,6 @@
 import Formula from './Formula';
 
-class Item{
+class Item {
     readonly name: string;
     readonly buildTime: number;
     readonly productNumber: number;
@@ -19,8 +19,11 @@ class Item{
             let fList: Formula[] = f.expandToBasic();
             fList.forEach(f1 => {
                 Formula.merge(ret, f1);
-                // console.log("buildBasic: merge : " + f1.item.name + " " + f1.number);
-            })
+                console.log(
+                    'buildBasic: merge : ' + f1.item.name + ' ' + f1.number,
+                );
+                console.log('merge result: ' + ret.length);
+            });
         });
         return ret;
     }
