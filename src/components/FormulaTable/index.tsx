@@ -5,10 +5,12 @@ import { useItemSelectArea } from '../ItemSelectArea/index';
 import ManagerTool from '@/factorio/ManagerTool';
 import { useState } from 'react';
 import { PlusOutlined, MinusOutlined} from '@ant-design/icons';
+import FactorySelect from '../FactorySelect/index';
+import { plugin } from 'umi';
 
 interface FormulaTableProps {
     dataSource: FormulaRowData[];
-    changeSpeed: (name: string, dir: boolean)=>void;
+    changeSpeed: (name: string, f: string, p: {name: string, num: number}[])=>void;
     changeFacNum: (name: string, dir: boolean)=>void;
 }
 
@@ -27,7 +29,7 @@ export const useCalFormula = () => {
     const [ formulaResult, setFormulaResult ] = useState<FormulaRowData[]>([]);
     const manager = ManagerTool.getInstance();
     const reCalRow = (data: FormulaRowData) => {
-        let everySingleTime :number = data.buildTime * 10 / data.productNum / data.speed;
+        let everySingleTime :number = data.buildTime / data.productNum / data.speed;
         let allTime : number = data.num * everySingleTime;
         let t : number = allTime / data.facNum;
         data.time = t;
@@ -45,7 +47,7 @@ export const useCalFormula = () => {
                 num: f.number,
                 buildTime: f.item.buildTime,
                 productNum: f.item.productNumber,
-                speed: 10,
+                speed: 1,
                 facNum: 1,
                 time: 1,
             };
@@ -57,14 +59,18 @@ export const useCalFormula = () => {
     const clear = () => {
         setFormulaResult([]);
     };
-    const changeSpeed = (name: string, dir: boolean) => {
+    const changeSpeed = (name: string, f: string, p: {name: string, num: number}[]) => {
         formulaResult.forEach(row => {
             if(row.name == name){
-                if(dir){
-                    row.speed = row.speed + 1;
-                }else if(row.speed > 1){
-                    row.speed = row.speed - 1;
+                let baseSpeed = 1;
+                if(f!='0'){
+                    baseSpeed = manager.factory[f].speed;
                 }
+                p.forEach(plugin => {
+                    baseSpeed = baseSpeed + (manager.plugin[plugin.name].speedUp * plugin.num);
+                    row.productNum = row.productNum + (manager.plugin[plugin.name].productUp * plugin.num);
+                });
+                row.speed = baseSpeed;
                 reCalRow(row);
                 setFormulaResult([...formulaResult]);
             }
@@ -96,12 +102,15 @@ export const useCalFormula = () => {
 
 const FormulaTable: React.FC<FormulaTableProps> = props => {
     const { dataSource, changeFacNum, changeSpeed } = props;
+    const factoryOnChange = (name: string, f : string, p: {name: string, num: number}[]) => {
+        console.log(f);
+        changeSpeed(name, f, p);
+    };
 
     const speedRender = (text: any, record: FormulaRowData) => {
-        return <span>
-            {(parseInt(text)/10).toFixed(1)}
-            <PlusOutlined onClick={()=>changeSpeed(record.name, true)}/>
-            <MinusOutlined onClick={()=>changeSpeed(record.name, false)}/>
+        return <span style={{width: '100%'}}>
+            {(parseFloat(text)).toFixed(2)}
+            <FactorySelect onChange={(f: string, p: {name: string, num: number}[]) => factoryOnChange(record.name, f, p)}/>
         </span>
     };
 
@@ -116,7 +125,7 @@ const FormulaTable: React.FC<FormulaTableProps> = props => {
     return <Table<FormulaRowData> dataSource={dataSource} rowKey={'name'} size={'small'} scroll={{y: 500}} pagination={{ pageSize: 50 }}>
         <Table.Column<FormulaRowData> dataIndex={'name'} title={'名称'}/>
         <Table.Column<FormulaRowData> dataIndex={'num'} title={'数量'}/>
-        <Table.Column<FormulaRowData> dataIndex={'speed'} title={'速度'} render={speedRender}/>
+        <Table.Column<FormulaRowData> dataIndex={'speed'} title={'速度'} render={speedRender} width={400}/>
         <Table.Column<FormulaRowData> dataIndex={'facNum'} title={'工厂数量'} render={facNumRender}/>
         <Table.Column<FormulaRowData> dataIndex={'time'} title={'时间'} render={text => parseFloat(text).toFixed(1)}/>
     </Table>;

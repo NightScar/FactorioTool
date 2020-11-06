@@ -1,9 +1,14 @@
 import Formula from './Formula';
 import Item from './Item';
 import ItemConfig from './itemConfig';
+import Factory from './Factory';
+import FactoryPlugin from './Plugin';
+import FactoryConfig from './factoryConfig';
 
 class ManagerTool {
     items: { [name: string]: Item } = {};
+    factory: { [name: string]: Factory} = {};
+    plugin: {[name: string]: FactoryPlugin } = {};
 
     private static _instance: ManagerTool;
 
@@ -25,6 +30,13 @@ class ManagerTool {
                 );
             });
         });
+        FactoryConfig.factory.forEach(c => {
+            this.factory[c.name] = Factory.loadFromConfig(c);
+        });
+        FactoryConfig.plugin.forEach(c => {
+            this.plugin[c.name] = FactoryPlugin.loadFromConfig(c);
+        });
+
     }
 
     public static getInstance(): ManagerTool {

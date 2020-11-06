@@ -205,7 +205,7 @@ const c: IItemConfig = {
         {
             name: '处理器',
             buildTime: 10,
-            productNumber: 1,
+            productNumber: 3,
             formulaList: [{ name: '电路板', num: 20 }, { name: '集成电路', num: 2 }, { name: '硫酸', num: 5}],
         },
         {
@@ -249,6 +249,36 @@ const c: IItemConfig = {
             buildTime: 21,
             productNumber: 3,
             formulaList: [{name: '处理器', num: 2}, {name: '机器人构架', num: 1}, {name: '轻质框架', num: 3}],
+        },
+        {
+            name: '速度插件1',
+            buildTime: 15,
+            productNumber: 1,
+            formulaList: [{name: '电路板', num: 5}, {name: '集成电路', num: 5}],
+        },
+        {
+            name: '速度插件2',
+            buildTime: 30,
+            productNumber: 1,
+            formulaList: [{name: '处理器', num: 5}, {name: '集成电路', num: 5}, {name: '速度插件1', num: 5}],
+        },
+        {
+            name: '速度插件3',
+            buildTime: 60,
+            productNumber: 1,
+            formulaList: [{name: '处理器', num: 5}, {name: '集成电路', num: 5}, {name: '速度插件2', num: 5}],
+        },
+        {
+            name: '火箭控制器',
+            buildTime: 30,
+            productNumber: 1,
+            formulaList: [{name: '处理器', num: 1}, {name: '速度插件1', num: 1}],
+        },
+        {
+            name: '火箭燃料',
+            buildTime: 30,
+            productNumber: 1,
+            formulaList: [{name: '固体燃料', num: 10}, {name: '轻油', num: 10}],
         },
     ],
 };
