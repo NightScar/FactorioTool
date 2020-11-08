@@ -7,8 +7,8 @@ import FactoryConfig from './factoryConfig';
 
 class ManagerTool {
     items: { [name: string]: Item } = {};
-    factory: { [name: string]: Factory} = {};
-    plugin: {[name: string]: FactoryPlugin } = {};
+    factory: { [name: string]: Factory } = {};
+    plugin: { [name: string]: FactoryPlugin } = {};
 
     private static _instance: ManagerTool;
 
@@ -18,6 +18,7 @@ class ManagerTool {
                 config.name,
                 config.buildTime,
                 config.productNumber,
+                config.iconPosition,
             );
         });
         ItemConfig.items.forEach(config => {
@@ -36,7 +37,6 @@ class ManagerTool {
         FactoryConfig.plugin.forEach(c => {
             this.plugin[c.name] = FactoryPlugin.loadFromConfig(c);
         });
-
     }
 
     public static getInstance(): ManagerTool {

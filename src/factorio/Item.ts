@@ -6,11 +6,18 @@ class Item {
     readonly productNumber: number;
     isLeaf: boolean = false;
     formulaList: Formula[] = [];
+    iconPosition: number[] = [];
 
-    constructor(name: string, buildTime: number, productNumber: number) {
+    constructor(
+        name: string,
+        buildTime: number,
+        productNumber: number,
+        iconPosition: number[] | undefined,
+    ) {
         this.name = name;
         this.buildTime = buildTime;
         this.productNumber = productNumber;
+        this.iconPosition = iconPosition ? iconPosition : [];
     }
 
     public buildBasicFormulaList(): Formula[] {
