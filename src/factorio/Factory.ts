@@ -3,58 +3,76 @@ import Item from '@/factorio/Item';
 import FactoryPlugin from './Plugin';
 import Formula from './Formula';
 
-export interface FactoryAnalysisResult{
-    factory: Factory,
-    item: Item,
-    finalSpeed: number,
-    costPerSec: Formula[],
-    productPerSec: Formula[],
+export interface FactoryAnalysisResult {
+    factory: Factory;
+    item: Item;
+    finalSpeed: number;
+    costPerSec: Formula[];
+    productPerSec: Formula[];
 }
 
-class Factory{
+export interface FactoryWithPlugin {
+    factory: Factory;
+    pluginList: { plugin: FactoryPlugin; num: number }[];
+}
+
+class Factory {
     readonly name: string;
     readonly icon: string;
     readonly speed: number;
     readonly space: number;
 
-    constructor(name: string, icon: string, speed: number, space: number){
+    constructor(name: string, icon: string, speed: number, space: number) {
         this.name = name;
         this.icon = icon;
         this.speed = speed;
         this.space = space;
     }
 
-    public static loadFromConfig : (config : FactoryConfig) => Factory = ( config ) => {
-        return new Factory(config.name, config.icon, config.speed, config.space);
+    public static loadFromConfig: (
+        config: FactoryConfig,
+    ) => Factory = config => {
+        return new Factory(
+            config.name,
+            config.icon,
+            config.speed,
+            config.space,
+        );
     };
 
-    public getIconUrl : () => string = () => {
+    public getIconUrl: () => string = () => {
         return '/icon/' + this.icon + '.png';
-    }
+    };
 
-    public analysisProduct : (item: Item, plugins: FactoryPlugin[]) => FactoryAnalysisResult = (item, plugins)=>{
-        let s = 100, pr = 100;
-        plugins.forEach(p =>{
+    public analysisProduct: (
+        item: Item,
+        plugins: FactoryPlugin[],
+    ) => FactoryAnalysisResult = (item, plugins) => {
+        let s = 100,
+            pr = 100;
+        plugins.forEach(p => {
             s = s + parseInt((p.speedUp * 100).toString());
             pr = pr + parseInt((p.productUp * 100).toString());
         });
         let finalSpeed = this.speed * (s / 100.0);
-        let finalProduct = 1 + (pr / 100.0);
-        let perSecProductLoop = finalSpeed  /(item.buildTime* 1.0);
-        let costRet : Formula[] = [];
-        item.formulaList.forEach(f=>{
+        let finalProduct = 1 + pr / 100.0;
+        let perSecProductLoop = finalSpeed / (item.buildTime * 1.0);
+        let costRet: Formula[] = [];
+        item.formulaList.forEach(f => {
             costRet.push(new Formula(f.item, f.number * perSecProductLoop));
         });
         let productPerSec: Formula[] = [];
-        productPerSec.push(new Formula(item, item.productNumber * finalProduct));
+        productPerSec.push(
+            new Formula(item, item.productNumber * finalProduct),
+        );
         return {
             factory: this,
             item: item,
             finalSpeed,
             costPerSec: costRet,
-            productPerSec
-        }
-    }
+            productPerSec,
+        };
+    };
 }
 
 export default Factory;

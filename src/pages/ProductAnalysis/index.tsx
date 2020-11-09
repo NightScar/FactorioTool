@@ -8,6 +8,7 @@ import ItemOperateTable, {
 import ManagerTool from '@/factorio/ManagerTool';
 import ItemProductBullet from './components/ItemProductBullet';
 import ItemIcon from './components/ItemIcon';
+import ItemProductAnalysisList from './components/ItemProductAnalysisList';
 
 interface ProductAnalysisProps {}
 
@@ -36,7 +37,7 @@ const ProductAnalysis: React.FC<ProductAnalysisProps> = props => {
                     <ItemIcon x={4} y={1} />
                 </Col>
             </Row>
-            <Row>
+            <Row gutter={24}>
                 <Col span={6}>
                     <ItemIcon x={8} y={3} />
                     <ItemOperateTable
@@ -45,7 +46,7 @@ const ProductAnalysis: React.FC<ProductAnalysisProps> = props => {
                     />
                 </Col>
                 <Col span={18}>
-                    <ItemProductBullet />
+                    <ItemProductAnalysisList />
                     {/* <FormulaTable dataSource={formulaResult} {...p} /> */}
                 </Col>
             </Row>
