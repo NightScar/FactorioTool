@@ -3,30 +3,74 @@ import ManagerTool from '../../factorio/ManagerTool';
 import { Select } from 'antd';
 import PluginInput from './PluginInput';
 import { useState } from 'react';
+import ItemIcon from '../../pages/ProductAnalysis/components/ItemIcon';
+import FactoryPlugin from '@/factorio/Plugin';
+import Factory from '@/factorio/Factory';
 
 interface FactorySelectProps {
     onChange: (f: string, p: { name: string; num: number }[]) => void;
+    instance?: FactorySelectInstance;
 }
 
-const FactorySelect: React.FC<FactorySelectProps> = props => {
-    const { onChange } = props;
+export interface FactorySelectInstance {
+    data: {
+        f: Factory;
+        p: { plugin: FactoryPlugin; num: number }[];
+    };
+    factorySelectOnChange: (f: string) => void;
+    pluginOnChange: (plugin: FactoryPlugin, num: number) => void;
+}
+
+export const useFactorySelect: () => FactorySelectInstance = () => {
     const tools = ManagerTool.getInstance();
+    let defaultFactory = tools.factory['3级工厂'];
+    let pluginList : FactoryPlugin[] = [];
+    for(let name in tools.plugin){
+        pluginList.push(tools.plugin[name]);
+    }
+    let tempP : { plugin: FactoryPlugin, num: number }[] = [];
+    pluginList.forEach(p=> tempP.push({plugin: p, num: 0}));
     const [state, setState] = useState<{
-        f: string;
-        p: { name: string; num: number }[];
-    }>({ f: '3级工厂', p: [] });
-
+        f: Factory;
+        p: { plugin: FactoryPlugin; num: number }[];
+    }>({
+        f: defaultFactory,
+        p: tempP,
+    });
     const factorySelectOnChange: (f: string) => void = f => {
-        onChange(f, state.p);
-        setState({ ...state, f });
+        setState({ ...state, f: tools.factory[f] });
     };
-
-    const pulingOnChange: (v: { name: string; num: number }[]) => void = (
-        v: { name: string; num: number }[],
+    const pluginOnChange: (plugin: FactoryPlugin, num: number) => void = (
+        plugin,
+        num,
     ) => {
-        onChange(state.f, v);
-        setState({ ...state, p: v });
+        let fr : { plugin: FactoryPlugin, num: number}[] = state.p.filter(pItem => {
+            let t1 = pItem.plugin.name;
+            let t2 = plugin.name;
+            return t1 == t2;
+        });
+        if(fr.length > 0){
+            fr[0].num = num;
+        }
+        setState({ ...state });
     };
+    return {
+        data: state,
+        factorySelectOnChange,
+        pluginOnChange,
+    };
+};
+
+const FactorySelect: React.FC<FactorySelectProps> = props => {
+    const { onChange, instance: i } = props;
+    let instance: FactorySelectInstance;
+    if (!i) {
+        instance = useFactorySelect();
+    } else {
+        instance = i;
+    }
+    const tools = ManagerTool.getInstance();
+    const { data, factorySelectOnChange, pluginOnChange } = instance;
 
     const genOpt: () => React.ReactElement[] = () => {
         let ret: React.ReactElement[] = [];
@@ -38,7 +82,10 @@ const FactorySelect: React.FC<FactorySelectProps> = props => {
                     style={{ width: '100%' }}
                     size={'large'}
                 >
-                    <img src={tools.factory[f].getIconUrl()} />
+                    <ItemIcon
+                        x={tools.factory[f].iconPosition[0]}
+                        y={tools.factory[f].iconPosition[1]}
+                    />
                     {f}
                 </Select.Option>,
             );
@@ -46,16 +93,16 @@ const FactorySelect: React.FC<FactorySelectProps> = props => {
         return ret;
     };
     return (
-        <div>
+        <div style={{ height: '40px' }}>
             <Select
-                style={{ width: '100px' }}
+                style={{ width: '120px' }}
                 size={'large'}
                 onSelect={factorySelectOnChange}
-                defaultValue={state.f}
+                defaultValue={data.f.name}
             >
                 {genOpt()}
             </Select>
-            <PluginInput onChange={pulingOnChange} />
+            <PluginInput onChange={pluginOnChange} pluginItem={data.p} />
         </div>
     );
 };

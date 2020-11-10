@@ -5,7 +5,9 @@ import ItemIcon from './ItemIcon';
 import Formula from '@/factorio/Formula';
 import { FactoryWithPlugin } from '@/factorio/Factory';
 import { PlusOutlined } from '@ant-design/icons';
-import FactorySelect from '@/components/FactorySelect';
+import FactorySelect, { useFactorySelect } from '@/components/FactorySelect';
+import { FactorySelectInstance } from '../../../components/FactorySelect/index';
+import FactoryPlugin from '../../../factorio/Plugin';
 
 export interface ItemProductAnalysisListRowProps {
     item: Item;
@@ -31,9 +33,41 @@ const ItemProductAnalysisListRow: React.FC<ItemProductAnalysisListRowProps> = pr
         return ret;
     };
 
-    const [factoryState, setFactoryState] = useState<{
-        [itemName: string]: FactoryWithPlugin;
-    }>({});
+    const [factoryList, setFactoryList] = useState<
+        { factory: FactorySelectInstance; num: number }[]
+    >([{factory: useFactorySelect(), num: 1}]);
+
+    const factorySelectItemRender: (
+        factoryInstace: FactorySelectInstance,
+        index: number,
+    ) => React.ReactElement = (
+        factoryInstace: FactorySelectInstance,
+        index: number,
+    ) => {
+        let pList : FactoryPlugin[] = [];
+        factoryInstace.data.p.forEach(o=>{
+            for(let i=0; i<o.num; i++){
+                pList.push(o.plugin);
+            }
+        });
+        const result = factoryInstace.data.f.analysisProduct(item, pList);
+        return (
+            <List.Item
+                key={
+                    factoryInstace.data.f.name +
+                    factoryInstace.data.p.length +
+                    index 
+                }
+            >
+                <FactorySelect instance={factoryInstace} onChange={()=>{}}/>
+                <div style={{display: 'inline-block', width: '100px'}}>
+                    速度：{result.finalSpeed.toFixed(3)}
+                    每秒产量：{result.productPerSec[0].number.toFixed(2)}
+                </div>
+            </List.Item>
+        );
+    };
+
     const factorySelectRender: (item: Item) => React.ReactElement = item => {
         return (
             <List
@@ -44,13 +78,7 @@ const ItemProductAnalysisListRow: React.FC<ItemProductAnalysisListRowProps> = pr
                     </Button>
                 }
             >
-                <List.Item>
-                    <FactorySelect
-                        onChange={o => {
-                            console.log(o);
-                        }}
-                    />
-                </List.Item>
+                {factoryList.map((o,index) => { return factorySelectItemRender(o.factory, index)})}
             </List>
         );
     };
