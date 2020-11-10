@@ -5,7 +5,8 @@ import PluginInput from './PluginInput';
 import { useState } from 'react';
 import ItemIcon from '../../pages/ProductAnalysis/components/ItemIcon';
 import FactoryPlugin from '@/factorio/Plugin';
-import Factory from '@/factorio/Factory';
+import Factory, { FactoryWithPlugin } from '@/factorio/Factory';
+import Item from '@/factorio/Item';
 
 interface FactorySelectProps {
     onChange: (f: string, p: { name: string; num: number }[]) => void;
@@ -21,22 +22,24 @@ export interface FactorySelectInstance {
     pluginOnChange: (plugin: FactoryPlugin, num: number) => void;
 }
 
-export const useFactorySelect: () => FactorySelectInstance = () => {
+export const useFactorySelect: (item: Item) => FactorySelectInstance = item => {
     const tools = ManagerTool.getInstance();
     let defaultFactory = tools.factory['3级工厂'];
-    let pluginList : FactoryPlugin[] = [];
-    for(let name in tools.plugin){
+    let pluginList: FactoryPlugin[] = [];
+    for (let name in tools.plugin) {
         pluginList.push(tools.plugin[name]);
     }
-    let tempP : { plugin: FactoryPlugin, num: number }[] = [];
-    pluginList.forEach(p=> tempP.push({plugin: p, num: 0}));
-    const [state, setState] = useState<{
-        f: Factory;
-        p: { plugin: FactoryPlugin; num: number }[];
-    }>({
-        f: defaultFactory,
-        p: tempP,
-    });
+    let tempP: { plugin: FactoryPlugin; num: number }[] = [];
+    pluginList.forEach(p => tempP.push({ plugin: p, num: 0 }));
+    // const [state, setState] = useState<{
+    //     f: Factory;
+    //     p: { plugin: FactoryPlugin; num: number }[];
+    // }>({
+    //     f: defaultFactory,
+    //     p: tempP,
+    // });
+    let a = new FactoryWithPlugin(item, defaultFactory);
+    const [state, setState] = useState<FactoryWithPlugin>(a);
     const factorySelectOnChange: (f: string) => void = f => {
         setState({ ...state, f: tools.factory[f] });
     };
@@ -44,12 +47,14 @@ export const useFactorySelect: () => FactorySelectInstance = () => {
         plugin,
         num,
     ) => {
-        let fr : { plugin: FactoryPlugin, num: number}[] = state.p.filter(pItem => {
-            let t1 = pItem.plugin.name;
-            let t2 = plugin.name;
-            return t1 == t2;
-        });
-        if(fr.length > 0){
+        let fr: { plugin: FactoryPlugin; num: number }[] = state.p.filter(
+            pItem => {
+                let t1 = pItem.plugin.name;
+                let t2 = plugin.name;
+                return t1 == t2;
+            },
+        );
+        if (fr.length > 0) {
             fr[0].num = num;
         }
         setState({ ...state });

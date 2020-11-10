@@ -9,6 +9,7 @@ import ManagerTool from '@/factorio/ManagerTool';
 import ItemProductBullet from './components/ItemProductBullet';
 import ItemIcon from './components/ItemIcon';
 import ItemProductAnalysisList from './components/ItemProductAnalysisList';
+import { ProAnaInstance, useProAna } from '@/factorio/ProductAnalysis';
 
 interface ProductAnalysisProps {}
 
@@ -17,6 +18,8 @@ const ProductAnalysis: React.FC<ProductAnalysisProps> = props => {
     let dataSource = ItemTableRowDataBuilder.buildFromItemArray(
         manager.getItemArray(),
     );
+    const proAnaInstance: ProAnaInstance = useProAna();
+
     const selectItemAddHandler = (itemName: string) => {};
     let optRender = (text: any, record: ItemTableRowData, index: number) => {
         return (
@@ -46,7 +49,7 @@ const ProductAnalysis: React.FC<ProductAnalysisProps> = props => {
                     />
                 </Col>
                 <Col span={18}>
-                    <ItemProductAnalysisList />
+                    <ItemProductAnalysisList proAna={proAnaInstance} />
                     {/* <FormulaTable dataSource={formulaResult} {...p} /> */}
                 </Col>
             </Row>

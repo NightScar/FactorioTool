@@ -4,24 +4,35 @@ import ManagerTool from '@/factorio/ManagerTool';
 import ItemProductAnalysisListRow, {
     ItemProductAnalysisListRowProps,
 } from './ItemProductAnalysisListRow';
+import { ProAnaInstance } from '@/factorio/ProductAnalysis';
+import { FactoryGroupHolder } from '@/factorio/Factory';
 
-export interface ItemProductAnalysisListProps {}
+export interface ItemProductAnalysisListProps {
+    proAna: ProAnaInstance;
+}
 
 const ItemProductAnalysisList: React.FC<ItemProductAnalysisListProps> = props => {
     const manager = ManagerTool.getInstance();
-    const dataSource: ItemProductAnalysisListRowProps[] = [
-        { item: manager.items['红瓶'] },
-        { item: manager.items['绿瓶'] },
-    ];
+    const { proAna } = props;
+    proAna.addItem(manager.items['红瓶']);
+    proAna.addItem(manager.items['绿瓶']);
 
-    const renderItem = (itemProps: ItemProductAnalysisListRowProps) => {
-        return <ItemProductAnalysisListRow {...itemProps} />;
+    const dataSource: () => FactoryGroupHolder[] = () => {
+        let ret: FactoryGroupHolder[] = [];
+        for (let p in proAna.data) {
+            ret.push(proAna.data[p].groupHolder);
+        }
+        return ret;
+    };
+
+    const renderItem = (itemProps: FactoryGroupHolder) => {
+        return <ItemProductAnalysisListRow groupHolder={itemProps} />;
     };
 
     return (
         <List
             header={'产量分析'}
-            dataSource={dataSource}
+            dataSource={dataSource()}
             renderItem={renderItem}
             bordered
         ></List>

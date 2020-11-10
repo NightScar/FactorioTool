@@ -3,18 +3,23 @@ import React, { useState } from 'react';
 import { List, Descriptions, Row, Col, Button } from 'antd';
 import ItemIcon from './ItemIcon';
 import Formula from '@/factorio/Formula';
-import { FactoryWithPlugin } from '@/factorio/Factory';
+import {
+    FactoryGroup,
+    FactoryGroupHolder,
+    FactoryWithPlugin,
+} from '@/factorio/Factory';
 import { PlusOutlined } from '@ant-design/icons';
 import FactorySelect, { useFactorySelect } from '@/components/FactorySelect';
 import { FactorySelectInstance } from '../../../components/FactorySelect/index';
 import FactoryPlugin from '../../../factorio/Plugin';
 
 export interface ItemProductAnalysisListRowProps {
-    item: Item;
+    groupHolder: FactoryGroupHolder;
 }
 
 const ItemProductAnalysisListRow: React.FC<ItemProductAnalysisListRowProps> = props => {
-    const { item } = props;
+    const { groupHolder } = props;
+    const item = groupHolder.item;
     const renderFormulaList: (
         formulaList: Formula[],
     ) => React.ReactElement[] = formulaList => {
@@ -33,34 +38,23 @@ const ItemProductAnalysisListRow: React.FC<ItemProductAnalysisListRowProps> = pr
         return ret;
     };
 
-    const [factoryList, setFactoryList] = useState<
-        { factory: FactorySelectInstance; num: number }[]
-    >([{factory: useFactorySelect(), num: 1}]);
-
     const factorySelectItemRender: (
-        factoryInstace: FactorySelectInstance,
+        factoryGroup: FactoryGroup,
         index: number,
-    ) => React.ReactElement = (
-        factoryInstace: FactorySelectInstance,
-        index: number,
-    ) => {
-        let pList : FactoryPlugin[] = [];
-        factoryInstace.data.p.forEach(o=>{
-            for(let i=0; i<o.num; i++){
+    ) => React.ReactElement = (factoryGroup: FactoryGroup, index: number) => {
+        let pList: FactoryPlugin[] = [];
+        factoryInstace.data.p.forEach(o => {
+            for (let i = 0; i < o.num; i++) {
                 pList.push(o.plugin);
             }
         });
         const result = factoryInstace.data.f.analysisProduct(item, pList);
         return (
             <List.Item
-                key={
-                    factoryInstace.data.f.name +
-                    factoryInstace.data.p.length +
-                    index 
-                }
+                key={factoryGroup.factoryWithPlugin.factory.name + index}
             >
-                <FactorySelect instance={factoryInstace} onChange={()=>{}}/>
-                <div style={{display: 'inline-block', width: '100px'}}>
+                <FactorySelect instance={factoryInstace} onChange={() => {}} />
+                <div style={{ display: 'inline-block', width: '100px' }}>
                     速度：{result.finalSpeed.toFixed(3)}
                     每秒产量：{result.productPerSec[0].number.toFixed(2)}
                 </div>
@@ -68,7 +62,9 @@ const ItemProductAnalysisListRow: React.FC<ItemProductAnalysisListRowProps> = pr
         );
     };
 
-    const factorySelectRender: (item: Item) => React.ReactElement = item => {
+    const factoryGroupHolderRender: (
+        holder: FactoryGroupHolder,
+    ) => React.ReactElement = holder => {
         return (
             <List
                 bordered
@@ -78,7 +74,9 @@ const ItemProductAnalysisListRow: React.FC<ItemProductAnalysisListRowProps> = pr
                     </Button>
                 }
             >
-                {factoryList.map((o,index) => { return factorySelectItemRender(o.factory, index)})}
+                {holder.groups.map((o, index) => {
+                    return factorySelectItemRender(o, index);
+                })}
             </List>
         );
     };
@@ -109,7 +107,7 @@ const ItemProductAnalysisListRow: React.FC<ItemProductAnalysisListRowProps> = pr
                             {renderFormulaList(item.formulaList)}
                         </Descriptions.Item>
                         <Descriptions.Item label={'生产工厂：'} span={4}>
-                            {factorySelectRender(item)}
+                            {factoryGroupHolderRender(groupHolder)}
                         </Descriptions.Item>
                     </Descriptions>
                 </Col>
