@@ -12,6 +12,7 @@ import { PlusOutlined } from '@ant-design/icons';
 import FactorySelect, { useFactorySelect } from '@/components/FactorySelect';
 import { FactorySelectInstance } from '../../../components/FactorySelect/index';
 import FactoryPlugin from '../../../factorio/Plugin';
+import FactoryWithPluginUI from '../../../components/FactorySelect/FactoryWithPluginUI';
 
 export interface ItemProductAnalysisListRowProps {
     groupHolder: FactoryGroupHolder;
@@ -42,21 +43,14 @@ const ItemProductAnalysisListRow: React.FC<ItemProductAnalysisListRowProps> = pr
         factoryGroup: FactoryGroup,
         index: number,
     ) => React.ReactElement = (factoryGroup: FactoryGroup, index: number) => {
-        let pList: FactoryPlugin[] = [];
-        factoryInstace.data.p.forEach(o => {
-            for (let i = 0; i < o.num; i++) {
-                pList.push(o.plugin);
-            }
-        });
-        const result = factoryInstace.data.f.analysisProduct(item, pList);
         return (
             <List.Item
                 key={factoryGroup.factoryWithPlugin.factory.name + index}
             >
-                <FactorySelect instance={factoryInstace} onChange={() => {}} />
+                <FactoryWithPluginUI instance={factoryGroup.factoryWithPlugin} item={factoryGroup.factoryWithPlugin.item}/>
                 <div style={{ display: 'inline-block', width: '100px' }}>
-                    速度：{result.finalSpeed.toFixed(3)}
-                    每秒产量：{result.productPerSec[0].number.toFixed(2)}
+                    速度：{factoryGroup.factoryWithPlugin.finalSpeed.toFixed(3)}
+                    每秒产量：{factoryGroup.factoryWithPlugin.productPerSec.toFixed(2)}
                 </div>
             </List.Item>
         );

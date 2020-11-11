@@ -10,6 +10,10 @@ import ItemProductBullet from './components/ItemProductBullet';
 import ItemIcon from './components/ItemIcon';
 import ItemProductAnalysisList from './components/ItemProductAnalysisList';
 import { ProAnaInstance, useProAna } from '@/factorio/ProductAnalysis';
+import FactoryWithPluginUI from '@/components/FactorySelect/FactoryWithPluginUI';
+import FactoryGroupUI from '../../components/FactorySelect/FactoryGroupUI';
+import FactoryGroupHolderUI from '@/components/FactorySelect/FactoryGroupHolderUI';
+import { useState } from 'react';
 
 interface ProductAnalysisProps {}
 
@@ -20,7 +24,9 @@ const ProductAnalysis: React.FC<ProductAnalysisProps> = props => {
     );
     const proAnaInstance: ProAnaInstance = useProAna();
 
-    const selectItemAddHandler = (itemName: string) => {};
+    const selectItemAddHandler = (itemName: string) => {
+        proAnaInstance.addItem(manager.items[itemName]);
+    };
     let optRender = (text: any, record: ItemTableRowData, index: number) => {
         return (
             <>
@@ -30,6 +36,7 @@ const ProductAnalysis: React.FC<ProductAnalysisProps> = props => {
             </>
         );
     };
+    const [fGroup, setFGroup] = useState< >();
     return (
         <Card>
             <Row>
@@ -38,6 +45,8 @@ const ProductAnalysis: React.FC<ProductAnalysisProps> = props => {
                 </Col>
                 <Col span={18}>
                     <ItemIcon x={4} y={1} />
+                    <FactoryGroupUI item={manager.items['红瓶']}/>
+                    <FactoryGroupHolderUI item={manager.items['红瓶']}/>
                 </Col>
             </Row>
             <Row gutter={24}>

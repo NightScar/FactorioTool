@@ -13,12 +13,21 @@ export interface FactoryAnalysisResult {
     productPerSec: Formula[];
 }
 
+export interface FactoryContent {
+    name: string;
+    icon: string;
+    speed: number;
+    space: number;
+    iconPosition: number[];
+}
+
 class Factory {
     readonly name: string;
     readonly icon: string;
     readonly speed: number;
     readonly space: number;
     readonly iconPosition: number[];
+    onFresh?: ()=>void;
 
     constructor(
         name: string,
@@ -95,8 +104,10 @@ export class FactoryWithPlugin {
     finalSpeed: number = 1.0;
     productPerSec: number = 1;
     costPerSec: Formula[] = [];
+    onFresh?: ()=>void;
 
     constructor(item: Item, factory: Factory) {
+        console.log('FactoryWithPlugin constructor()');
         this.item = item;
         this.factory = factory;
         this.pluginList = [];
@@ -117,6 +128,7 @@ export class FactoryWithPlugin {
     }
 
     public pluginOnChange(plugin: FactoryPlugin, num: number) {
+        console.log('FactoryWithPlugin pluginOnChange()');
         this.pluginList.forEach(o => {
             if (o.plugin.name == plugin.name) {
                 o.pluginNum = num;
@@ -126,11 +138,13 @@ export class FactoryWithPlugin {
     }
 
     public factoryOnChange(factory: Factory) {
+        console.log('FactoryWithPlugin factoryOnChange()');
         this.factory = factory;
         this.reCal();
     }
 
     public reCal() {
+        console.log('FactoryWithPlugin reCal()');
         let calResult = this.factory.analysisProduct(
             this.item,
             this.getPluginInOneList(),
@@ -138,9 +152,13 @@ export class FactoryWithPlugin {
         this.finalSpeed = calResult.finalSpeed;
         this.productPerSec = calResult.productPerSec[0].number;
         this.costPerSec = calResult.costPerSec;
+        if(this.onFresh){
+            this.onFresh();
+        }
     }
 
     public static defaultInstance(item: Item) {
+        console.log('FactoryWithPlugin defaultInstance()');
         let m = ManagerTool.getInstance();
         return new FactoryWithPlugin(item, m.factory['3级工厂']);
     }
@@ -151,16 +169,20 @@ export class FactoryGroup {
     factoryNum: number = 1;
     productPerSec: number;
     costPerSec: Formula[];
+    onFresh?: ()=>void;
 
     constructor(item: Item, factory: Factory) {
+        console.log('FactoryGroup constructor()');
         this.factoryWithPlugin = new FactoryWithPlugin(item, factory);
         this.productPerSec =
             this.factoryWithPlugin.productPerSec * this.factoryNum;
         this.costPerSec = [];
         this.reCalCostList();
+        this.factoryWithPlugin.onFresh = () => { this.factoryWithPlugin = { ...this.factoryWithPlugin} };
     }
 
     private reCalCostList() {
+        console.log('FactoryGroup reCalCostList()');
         let list: Formula[] = [];
         this.factoryWithPlugin.costPerSec.forEach(f => {
             list.push(new Formula(f.item, f.number * this.factoryNum));
@@ -169,6 +191,7 @@ export class FactoryGroup {
     }
 
     public reCal() {
+        console.log('FactoryGroup reCal()');
         this.factoryWithPlugin.reCal();
         this.reCalCostList();
         this.productPerSec =
@@ -176,16 +199,19 @@ export class FactoryGroup {
     }
 
     public factoryNumOnChange(factoryNum: number) {
+        console.log('FactoryGroup factoryNumOnChange()');
         this.factoryNum = factoryNum;
         this.reCal();
     }
 
     public changeFactory(factory: Factory) {
+        console.log('FactoryGroup changeFactory()');
         this.factoryWithPlugin.factoryOnChange(factory);
         this.reCal();
     }
 
     public changePlugin(plugin: FactoryPlugin, pluginNum: number) {
+        console.log('FactoryGroup changePlugin()');
         this.factoryWithPlugin.pluginOnChange(plugin, pluginNum);
         this.reCal();
     }
@@ -196,8 +222,10 @@ export class FactoryGroupHolder {
     groups: FactoryGroup[] = [];
     productPerSec: number;
     costPerSec: Formula[];
+    onFresh?: ()=>void;
 
     constructor(item: Item) {
+        console.log('FactoryGroupHolder constructor()');
         this.item = item;
         const m: ManagerTool = ManagerTool.getInstance();
         this.groups.push(new FactoryGroup(item, m.factory['3级工厂']));
@@ -206,12 +234,14 @@ export class FactoryGroupHolder {
     }
 
     public addGroup() {
+        console.log('FactoryGroupHolder addGroup()');
         const m: ManagerTool = ManagerTool.getInstance();
         this.groups.push(new FactoryGroup(this.item, m.factory['3级工厂']));
         this.reCal();
     }
 
     public reCal() {
+        console.log('FactoryGroupHolder reCal()');
         let p: number = 0;
         let c: Formula[] = [];
         this.groups.forEach(g => {
@@ -220,9 +250,13 @@ export class FactoryGroupHolder {
         });
         this.productPerSec = p;
         this.costPerSec = c;
+        if(this.onFresh){
+            this.onFresh();
+        }
     }
 
     public deleteGroup(index: number) {
+        console.log('FactoryGroupHolder deleteGroup()');
         let g: FactoryGroup = this.groups[index];
         if (g) {
             this.groups.splice(g, 1);
@@ -231,12 +265,14 @@ export class FactoryGroupHolder {
     }
 
     public changeFactory(factory: Factory, groupIndex: number) {
+        console.log('FactoryGroupHolder changeFactory()');
         let g: FactoryGroup = this.groups[groupIndex];
         g.changeFactory(factory);
         this.reCal();
     }
 
     public changeFacNum(facNum: number, groupIndex: number) {
+        console.log('FactoryGroupHolder changeFacNum()');
         let g: FactoryGroup = this.groups[groupIndex];
         g.factoryNumOnChange(facNum);
         this.reCal();
@@ -247,6 +283,7 @@ export class FactoryGroupHolder {
         pluginNum: number,
         groupIndex: number,
     ) {
+        console.log('FactoryGroupHolder changePlugin()');
         let g: FactoryGroup = this.groups[groupIndex];
         g.changePlugin(plugin, pluginNum);
         this.reCal();
