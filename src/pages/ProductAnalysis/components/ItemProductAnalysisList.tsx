@@ -12,10 +12,7 @@ export interface ItemProductAnalysisListProps {
 }
 
 const ItemProductAnalysisList: React.FC<ItemProductAnalysisListProps> = props => {
-    const manager = ManagerTool.getInstance();
     const { proAna } = props;
-    // proAna.addItem(manager.items['红瓶']);
-    // proAna.addItem(manager.items['绿瓶']);
 
     const dataSource: () => FactoryGroupHolder[] = () => {
         let ret: FactoryGroupHolder[] = [];

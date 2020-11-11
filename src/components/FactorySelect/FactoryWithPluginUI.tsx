@@ -185,7 +185,7 @@ const FactoryWithPluginUI: React.FC<FactoryWithPluginUIProps> = props => {
                         x={f.item.iconPosition[0]}
                         y={f.item.iconPosition[1]}
                     />
-                    {f.number}
+                    {f.number.toFixed(2)}
                 </span>,
             );
         });

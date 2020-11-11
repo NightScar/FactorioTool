@@ -132,8 +132,7 @@ export const useFactoryGroupStatless: (
     const factoryNumOnChange = (factoryNum: number) => {
         stateOnChange({
             factoryNum,
-            productPerSec:
-                state.factoryWithPlugin.productPerSec * factoryNum,
+            productPerSec: state.factoryWithPlugin.productPerSec * factoryNum,
             costPerSec: calCostList(
                 state.factoryWithPlugin.costPerSec,
                 factoryNum,
@@ -194,7 +193,7 @@ const FactoryGroupUI: React.FC<FactoryGroupUIProps> = props => {
                         style={{ width: '45px', display: 'inline-block' }}
                         value={instance.data.factoryNum}
                     />
-                    每秒产量：{instance.data.productPerSec}
+                    每秒产量：{instance.data.productPerSec.toFixed(2)}
                 </Row>
                 <Row>
                     每秒消耗: {renderFormulaList(instance.data.costPerSec)}
