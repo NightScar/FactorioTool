@@ -130,12 +130,21 @@ export const useFactoryWithPluginStateless: (
         });
         return ret;
     };
-    const reCal = () => {
+    const reCal = (factory?: Factory) => {
         console.log('FactoryWithPlugin reCal()');
-        let calResult = state.factory.analysisProduct(
-            state.item,
-            getPluginInOneList(),
-        );
+        let calResult;
+        if (factory) {
+            calResult = factory.analysisProduct(
+                state.item,
+                getPluginInOneList(),
+            );
+        } else {
+            calResult = state.factory.analysisProduct(
+                state.item,
+                getPluginInOneList(),
+            );
+        }
+
         return {
             finalSpeed: calResult.finalSpeed,
             productPerSec: calResult.productPerSec[0].number,
@@ -155,7 +164,7 @@ export const useFactoryWithPluginStateless: (
 
     const factoryOnChange = (factory: Factory) => {
         console.log('FactoryWithPlugin factoryOnChange()');
-        stateOnChange({ factory, ...reCal() });
+        stateOnChange({ factory, ...reCal(factory) });
     };
     return {
         data: state,

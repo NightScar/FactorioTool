@@ -9,7 +9,6 @@ import FactoryWithPluginUI, {
 import { useState } from 'react';
 import { InputNumber, Row, Col } from 'antd';
 import ItemIcon from '@/pages/ProductAnalysis/components/ItemIcon';
-import { FactoryWithPlugin } from '../../factorio/Factory';
 import {
     factoryWithPluginStatelessBuilder,
     useFactoryWithPluginStateless,

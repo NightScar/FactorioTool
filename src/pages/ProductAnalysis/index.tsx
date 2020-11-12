@@ -17,7 +17,7 @@ import FactoryGroupUI, {
     useFactoryGroupStatless,
 } from '../../components/FactorySelect/FactoryGroupUI';
 import FactoryGroupHolderUI, {
-    FactoryGroupHolderInstance,
+    FactoryGroupHolderInstance, FactoryGroupHolderState, factoryGroupHolderStatelessBuilder, useFactoryGroupHolderStateless,
 } from '@/components/FactorySelect/FactoryGroupHolderUI';
 import { useState } from 'react';
 
@@ -42,10 +42,10 @@ const ProductAnalysis: React.FC<ProductAnalysisProps> = props => {
             </>
         );
     };
-    const [fGroup, setFGroup] = useState<FactoryGroupInstanceState>(
-        factoryGroupStatlessBuilder(manager.items['红瓶']),
+    const [fGroup, setFGroup] = useState<FactoryGroupHolderState>(
+        factoryGroupHolderStatelessBuilder(manager.items['红瓶']),
     );
-    let ins = useFactoryGroupStatless(fGroup, c => {
+    let ins = useFactoryGroupHolderStateless(fGroup, c => {
         setFGroup({ ...fGroup, ...c });
     });
     return (
@@ -56,11 +56,11 @@ const ProductAnalysis: React.FC<ProductAnalysisProps> = props => {
                 </Col>
                 <Col span={18}>
                     <ItemIcon x={4} y={1} />
-                    <FactoryGroupUI
+                    {/* <FactoryGroupUI
                         item={manager.items['红瓶']}
                         instance={ins}
-                    />
-                    <FactoryGroupHolderUI item={manager.items['红瓶']} />
+                    /> */}
+                    <FactoryGroupHolderUI item={manager.items['红瓶']} instance={ins}/>
                 </Col>
             </Row>
             <Row gutter={24}>
