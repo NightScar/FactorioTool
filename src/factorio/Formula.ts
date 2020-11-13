@@ -45,7 +45,7 @@ class Formula {
             }
         });
         if (!flag) {
-            target.push(source);
+            target.push(new Formula(source.item, source.number));
         }
     }
 

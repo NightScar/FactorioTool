@@ -1,28 +1,28 @@
-import React from 'react';
+import React, { Reducer, useReducer } from 'react';
 import {
-    FactoryGroupInstance,
     FactoryGroupInstanceState,
-    factoryGroupStatlessBuilder,
-    useFactoryGroupStatless,
+    factoryGroupStatelessBuilder,
 } from './FactoryGroupUI';
 import { List, Button } from 'antd';
 import { PlusOutlined } from '@ant-design/icons';
 import Item from '@/factorio/Item';
-import { useState } from 'react';
 import FactoryGroupUI from './FactoryGroupUI';
 import Formula from '@/factorio/Formula';
 import { Bar } from '@ant-design/charts';
-import { FactoryGroup } from '../../factorio/Factory';
+import { renderFormulaList } from './FactoryGroupUI';
 
 export interface FactoryGroupHolderState {
-    factoryGroup: { [index: number]: FactoryGroupInstanceState };
-    productPerSec: number;
-    costPerSec: Formula[];
+    factoryGroupHolder: { [index: number]: FactoryGroupInstanceState };
+    holderProductPerSec: number;
+    holderCostPerSec: Formula[];
 }
 export interface FactoryGroupHolderInstance {
     data: FactoryGroupHolderState;
     addGroup: () => void;
-    getGroupInstance: (index: number) => FactoryGroupInstance;
+    groupStateChangeHandle: (
+        groupState: FactoryGroupInstanceState,
+        index: number,
+    ) => void;
 }
 
 interface FactoryGroupHolderUIProps {
@@ -30,105 +30,96 @@ interface FactoryGroupHolderUIProps {
     instance?: FactoryGroupHolderInstance;
 }
 
-const reCal = (factoryGroup: {
+const reCal = (factoryGroupHolder: {
     [index: number]: FactoryGroupInstanceState;
 }) => {
     let productPerSec = 0;
     let formulaList: Formula[] = [];
-    for (let i in factoryGroup) {
-        productPerSec = productPerSec + factoryGroup[i].productPerSec;
-        Formula.mergeList(formulaList, factoryGroup[i].costPerSec);
+    for (let i in factoryGroupHolder) {
+        productPerSec =
+            productPerSec + factoryGroupHolder[i].groupProductPerSec;
+        Formula.mergeList(formulaList, factoryGroupHolder[i].groupCostPerSec);
     }
     return {
-        productPerSec,
-        costPerSec: formulaList,
+        holderProductPerSec: productPerSec,
+        holderCostPerSec: formulaList,
     };
+};
+
+const reducer: Reducer<
+    FactoryGroupHolderState,
+    { type: 'addGroup' | 'changeGroupState'; payload: any[] }
+> = (state, action) => {
+    switch (action.type) {
+        case 'addGroup':
+            let [item] = action.payload;
+            let i: number = 0;
+            while (state.factoryGroupHolder[i]) {
+                i++;
+            }
+            let newFactoryGroupHolder = { ...state.factoryGroupHolder };
+            newFactoryGroupHolder[i] = factoryGroupStatelessBuilder(item);
+            return {
+                ...state,
+                factoryGroupHolder: newFactoryGroupHolder,
+                ...reCal(newFactoryGroupHolder),
+            };
+        case 'changeGroupState':
+            const [groupState, index] = action.payload;
+            state.factoryGroupHolder[index] = groupState;
+            return {
+                ...state,
+                factoryGroupHolder: {
+                    ...state.factoryGroupHolder,
+                },
+                ...reCal(state.factoryGroupHolder),
+            };
+        default:
+            throw new Error();
+    }
 };
 
 export const useFactoryGroupHolder: (
     item: Item,
 ) => FactoryGroupHolderInstance = item => {
-    let tempGroupState = factoryGroupStatlessBuilder(item);
-    const [state, setState] = useState<FactoryGroupHolderState>({
-        factoryGroup: {
-            0: tempGroupState,
-        },
-        productPerSec: tempGroupState.productPerSec,
-        costPerSec: tempGroupState.costPerSec,
+    const [state, dispatch] = useReducer<
+        Reducer<
+            FactoryGroupHolderState,
+            { type: 'addGroup' | 'changeGroupState'; payload: any[] }
+        >,
+        {}
+    >(reducer, {}, () => {
+        return factoryGroupHolderStatelessBuilder(item);
     });
 
     const addGroup: () => void = () => {
-        let i: number = 0;
-        while (state.factoryGroup[i]) {
-            i++;
-        }
-        let factoryGroup = { ...state.factoryGroup };
-        factoryGroup[i] = factoryGroupStatlessBuilder(item);
-        setState({ ...state, factoryGroup, ...reCal(factoryGroup) });
+        dispatch({ type: 'addGroup', payload: [item] });
     };
 
-    const getGroupInstance = (index: number) => {
-        return useFactoryGroupStatless(state.factoryGroup[index], c => {
-            state.factoryGroup[index] = { ...state.factoryGroup[index], ...c };
-            setState({
-                ...state,
-                factoryGroup: { ...state.factoryGroup },
-            });
-        });
+    const groupStateChangeHandle: (
+        groupState: FactoryGroupInstanceState,
+        index: number,
+    ) => void = (groupState, index) => {
+        dispatch({ type: 'changeGroupState', payload: [groupState, index] });
     };
 
     return {
         data: state,
         addGroup,
-        getGroupInstance,
+        groupStateChangeHandle,
     };
 };
 
 export const factoryGroupHolderStatelessBuilder: (
     item: Item,
 ) => FactoryGroupHolderState = item => {
-    let tempGroupState = factoryGroupStatlessBuilder(item);
+    let tempGroupState = factoryGroupStatelessBuilder(item);
     return {
-        factoryGroup: {
+        factoryGroupHolder: {
             0: tempGroupState,
         },
-        productPerSec: tempGroupState.productPerSec,
-        costPerSec: tempGroupState.costPerSec,
-    };
-};
-
-export const useFactoryGroupHolderStateless: (
-    state: FactoryGroupHolderState,
-    stateOnChange: (c: object) => void,
-) => FactoryGroupHolderInstance = (state, stateOnChange) => {
-    const addGroup: () => void = () => {
-        let i: number = 0;
-        while (state.factoryGroup[i]) {
-            i++;
-        }
-        let factoryGroup: {
-            [index: number]: FactoryGroupInstanceState;
-        } = { ...state.factoryGroup };
-        factoryGroup[i] = factoryGroupStatlessBuilder(
-            state.factoryGroup[0].factoryWithPlugin.item,
-        );
-        stateOnChange({ factoryGroup, ...reCal(factoryGroup) });
-    };
-
-    const getGroupInstance = (index: number) => {
-        return useFactoryGroupStatless(state.factoryGroup[index], c => {
-            state.factoryGroup[index] = { ...state.factoryGroup[index], ...c };
-            stateOnChange({
-                factoryGroup: { ...state.factoryGroup },
-                ...reCal(state.factoryGroup),
-            });
-        });
-    };
-
-    return {
-        data: state,
-        addGroup,
-        getGroupInstance,
+        holderProductPerSec: tempGroupState.groupProductPerSec,
+        holderCostPerSec: tempGroupState.groupCostPerSec,
     };
 };
 
@@ -147,18 +138,20 @@ const FactoryGroupHolderUI: React.FC<FactoryGroupHolderUIProps> = props => {
                 key={factoryGroup.factoryWithPlugin.factory.name + index}
             >
                 <FactoryGroupUI
-                    instance={instance.getGroupInstance(index)}
                     item={item}
+                    freshHandle={groupState => {
+                        instance.groupStateChangeHandle(groupState, index);
+                    }}
                 />
             </List.Item>
         );
     };
     const groupHolderRender = () => {
         let ret = [];
-        for (let i in instance.data.factoryGroup) {
+        for (let i in instance.data.factoryGroupHolder) {
             ret.push(
                 factorySelectItemRender(
-                    instance.data.factoryGroup[i],
+                    instance.data.factoryGroupHolder[i],
                     parseInt(i),
                 ),
             );
@@ -167,13 +160,15 @@ const FactoryGroupHolderUI: React.FC<FactoryGroupHolderUIProps> = props => {
     };
     const footerRender = () => {
         let data: { product: number; item: string; type: string }[] = [];
-        for (let i in instance.data.factoryGroup) {
+        for (let i in instance.data.factoryGroupHolder) {
             data.push({
-                product: instance.data.factoryGroup[i].productPerSec,
-                item: instance.data.factoryGroup[i].factoryWithPlugin.item.name,
+                product: instance.data.factoryGroupHolder[i].groupProductPerSec,
+                item:
+                    instance.data.factoryGroupHolder[i].factoryWithPlugin.item
+                        .name,
                 type: i.toString(),
             });
-            instance.data.factoryGroup[i].costPerSec.forEach(f => {
+            instance.data.factoryGroupHolder[i].groupCostPerSec.forEach(f => {
                 data.push({
                     product: f.number,
                     item: f.item.name,
@@ -202,13 +197,29 @@ const FactoryGroupHolderUI: React.FC<FactoryGroupHolderUIProps> = props => {
             <List
                 bordered
                 header={
-                    <Button
-                        type={'dashed'}
-                        style={{ width: '100%' }}
-                        onClick={instance.addGroup}
-                    >
-                        <PlusOutlined />
-                    </Button>
+                    <>
+                        <Button
+                            type={'dashed'}
+                            style={{ width: '50%' }}
+                            onClick={instance.addGroup}
+                        >
+                            <PlusOutlined />
+                        </Button>
+                        <div
+                            style={{
+                                display: 'inline-block',
+                                marginLeft: '32px',
+                            }}
+                        >
+                            <span style={{ marginRight: '32px' }}>
+                                总产量：
+                                {instance.data.holderProductPerSec.toFixed(2)}
+                            </span>{' '}
+                            <span style={{ marginRight: '32px' }}>
+                                总需求：{renderFormulaList(instance.data.holderCostPerSec)}
+                            </span>{' '}
+                        </div>
+                    </>
                 }
             >
                 {groupHolderRender()}

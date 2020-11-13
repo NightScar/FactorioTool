@@ -1,17 +1,12 @@
-import Item from '@/factorio/Item';
-import React, { useState } from 'react';
+import React from 'react';
 import { List, Descriptions, Row, Col, Button } from 'antd';
 import ItemIcon from './ItemIcon';
 import Formula from '@/factorio/Formula';
 import {
     FactoryGroup,
     FactoryGroupHolder,
-    FactoryWithPlugin,
 } from '@/factorio/Factory';
 import { PlusOutlined } from '@ant-design/icons';
-import FactorySelect, { useFactorySelect } from '@/components/FactorySelect';
-import { FactorySelectInstance } from '../../../components/FactorySelect/index';
-import FactoryPlugin from '../../../factorio/Plugin';
 import FactoryWithPluginUI from '../../../components/FactorySelect/FactoryWithPluginUI';
 
 export interface ItemProductAnalysisListRowProps {

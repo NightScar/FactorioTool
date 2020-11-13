@@ -6,18 +6,15 @@ import ItemOperateTable, {
     ItemTableRowDataBuilder,
 } from '@/components/ItemOperateTable';
 import ManagerTool from '@/factorio/ManagerTool';
-import ItemProductBullet from './components/ItemProductBullet';
 import ItemIcon from './components/ItemIcon';
 import ItemProductAnalysisList from './components/ItemProductAnalysisList';
 import { ProAnaInstance, useProAna } from '@/factorio/ProductAnalysis';
 import FactoryWithPluginUI from '@/components/FactorySelect/FactoryWithPluginUI';
 import FactoryGroupUI, {
     FactoryGroupInstanceState,
-    factoryGroupStatlessBuilder,
-    useFactoryGroupStatless,
 } from '../../components/FactorySelect/FactoryGroupUI';
 import FactoryGroupHolderUI, {
-    FactoryGroupHolderInstance, FactoryGroupHolderState, factoryGroupHolderStatelessBuilder, useFactoryGroupHolderStateless,
+     FactoryGroupHolderState, factoryGroupHolderStatelessBuilder, 
 } from '@/components/FactorySelect/FactoryGroupHolderUI';
 import { useState } from 'react';
 
@@ -42,12 +39,6 @@ const ProductAnalysis: React.FC<ProductAnalysisProps> = props => {
             </>
         );
     };
-    const [fGroup, setFGroup] = useState<FactoryGroupHolderState>(
-        factoryGroupHolderStatelessBuilder(manager.items['红瓶']),
-    );
-    let ins = useFactoryGroupHolderStateless(fGroup, c => {
-        setFGroup({ ...fGroup, ...c });
-    });
     return (
         <Card>
             <Row>
@@ -56,11 +47,12 @@ const ProductAnalysis: React.FC<ProductAnalysisProps> = props => {
                 </Col>
                 <Col span={18}>
                     <ItemIcon x={4} y={1} />
+                    <FactoryGroupUI item={manager.items['红瓶']}/>
                     {/* <FactoryGroupUI
                         item={manager.items['红瓶']}
                         instance={ins}
                     /> */}
-                    <FactoryGroupHolderUI item={manager.items['红瓶']} instance={ins}/>
+                    <FactoryGroupHolderUI item={manager.items['红瓶']} />
                 </Col>
             </Row>
             <Row gutter={24}>

@@ -1,180 +1,159 @@
 import Formula from '@/factorio/Formula';
 import Item from '@/factorio/Item';
-import React from 'react';
+import React, { Reducer, useEffect, useReducer } from 'react';
 import FactoryWithPluginUI, {
     FactoryWithPluginState,
-    FactoryWithPluginInstance,
-    useFactoryWithPlugin,
 } from './FactoryWithPluginUI';
-import { useState } from 'react';
 import { InputNumber, Row, Col } from 'antd';
 import ItemIcon from '@/pages/ProductAnalysis/components/ItemIcon';
-import {
-    factoryWithPluginStatelessBuilder,
-    useFactoryWithPluginStateless,
-} from './FactoryWithPluginUI';
+import { factoryWithPluginStatelessBuilder } from './FactoryWithPluginUI';
 
 export interface FactoryGroupInstanceState {
     factoryWithPlugin: FactoryWithPluginState;
     factoryNum: number;
-    productPerSec: number;
-    costPerSec: Formula[];
+    groupProductPerSec: number;
+    groupCostPerSec: Formula[];
 }
 
 export interface FactoryGroupInstance {
     data: FactoryGroupInstanceState;
     factoryNumOnChange: (factoryNum: number) => void;
-    factoryWithPluginInstance: FactoryWithPluginInstance;
+    facWithPluFreshHandle: (facWithPluState: FactoryWithPluginState) => void;
 }
+
+const calCostList = (formulaList: Formula[], factoryNum: number) => {
+    console.log('FactoryGroup reCalCostList()');
+    console.log(formulaList);
+    console.log(factoryNum);
+    let list: Formula[] = [];
+    formulaList.forEach(f => {
+        list.push(new Formula(f.item, f.number * factoryNum));
+    });
+    return list;
+};
+
+const reducer: Reducer<
+    FactoryGroupInstanceState,
+    { type: 'changeFacWithPlu' | 'changeFacNum'; payload: any[] }
+> = (state, action) => {
+    switch (action.type) {
+        case 'changeFacWithPlu':
+            console.log('dispatch changeFacWithPlu');
+            const [facWithPluState] = action.payload;
+            return {
+                ...state,
+                factoryWithPlugin: facWithPluState,
+                groupProductPerSec:
+                    facWithPluState.singleFactoryProductPerSec *
+                    state.factoryNum,
+                groupCostPerSec: calCostList(
+                    facWithPluState.singleFactoryCostPerSec,
+                    state.factoryNum,
+                ),
+            };
+        case 'changeFacNum':
+            console.log('dispatch changeFacNum');
+            const [factoryNum] = action.payload;
+            return {
+                ...state,
+                factoryNum,
+                groupProductPerSec:
+                    state.factoryWithPlugin.singleFactoryProductPerSec *
+                    factoryNum,
+                groupCostPerSec: calCostList(
+                    state.factoryWithPlugin.singleFactoryCostPerSec,
+                    factoryNum,
+                ),
+            };
+        default:
+            throw new Error();
+    }
+};
 
 export const useFactoryGroup: (
     item: Item,
     fresh?: () => void,
 ) => FactoryGroupInstance = item => {
-    const childFresh = () => {
-        setState({
-            ...state,
-            productPerSec:
-                factoryWithPluginInstance.data.productPerSec * state.factoryNum,
-            costPerSec: calCostList(
-                factoryWithPluginInstance.data.costPerSec,
-                state.factoryNum,
-            ),
-        });
-    };
-    let factoryWithPluginInstance: FactoryWithPluginInstance = useFactoryWithPlugin(
-        item,
-        childFresh,
-    );
-
-    const calCostList = (formulaList: Formula[], factoryNum: number) => {
-        console.log('FactoryGroup reCalCostList()');
-        let list: Formula[] = [];
-        formulaList.forEach(f => {
-            list.push(new Formula(f.item, f.number * factoryNum));
-        });
-        return list;
-    };
-
-    const [state, setState] = useState<FactoryGroupInstanceState>({
-        factoryWithPlugin: factoryWithPluginInstance.data,
-        factoryNum: 1,
-        productPerSec: factoryWithPluginInstance.data.productPerSec,
-        costPerSec: calCostList(factoryWithPluginInstance.data.costPerSec, 1),
+    const [state, dispatch] = useReducer<
+        Reducer<
+            FactoryGroupInstanceState,
+            { type: 'changeFacWithPlu' | 'changeFacNum'; payload: any[] }
+        >,
+        {}
+    >(reducer, {}, () => {
+        return factoryGroupStatelessBuilder(item);
     });
 
     const factoryNumOnChange = (factoryNum: number) => {
         console.log('FactoryGroup factoryNumOnChange()');
-        setState({
-            ...state,
-            factoryNum,
-            productPerSec:
-                factoryWithPluginInstance.data.productPerSec * factoryNum,
-            costPerSec: calCostList(
-                factoryWithPluginInstance.data.costPerSec,
-                factoryNum,
-            ),
-        });
+        dispatch({ type: 'changeFacNum', payload: [factoryNum] });
+    };
+
+    const facWithPluFreshHandle: (
+        facWithPluState: FactoryWithPluginState,
+    ) => void = facWithPluState => {
+        dispatch({ type: 'changeFacWithPlu', payload: [facWithPluState] });
     };
 
     return {
         data: state,
         factoryNumOnChange,
-        factoryWithPluginInstance,
+        facWithPluFreshHandle,
     };
 };
 
-export const factoryGroupStatlessBuilder: (
+export const factoryGroupStatelessBuilder: (
     item: Item,
 ) => FactoryGroupInstanceState = (item: Item) => {
     let f = factoryWithPluginStatelessBuilder(item);
-    const calCostList = (formulaList: Formula[], factoryNum: number) => {
-        console.log('FactoryGroup reCalCostList()');
-        let list: Formula[] = [];
-        formulaList.forEach(f => {
-            list.push(new Formula(f.item, f.number * factoryNum));
-        });
-        return list;
-    };
     return {
         factoryWithPlugin: f,
         factoryNum: 1,
-        productPerSec: f.productPerSec,
-        costPerSec: calCostList(f.costPerSec, 1),
-    };
-};
-export const useFactoryGroupStatless: (
-    state: FactoryGroupInstanceState,
-    stateOnChange: (c: object) => void,
-) => FactoryGroupInstance = (state, stateOnChange) => {
-    const calCostList = (formulaList: Formula[], factoryNum: number) => {
-        console.log('FactoryGroup reCalCostList()');
-        let list: Formula[] = [];
-        formulaList.forEach(f => {
-            list.push(new Formula(f.item, f.number * factoryNum));
-        });
-        return list;
-    };
-
-    let factoryWithPluginInstance = useFactoryWithPluginStateless(
-        state.factoryWithPlugin,
-        (c: object) => {
-            let newF = { ...state.factoryWithPlugin, ...c };
-            stateOnChange({
-                factoryWithPlugin: { ...state.factoryWithPlugin, ...c },
-                productPerSec: newF.productPerSec * state.factoryNum,
-                costPerSec: calCostList(newF.costPerSec, state.factoryNum),
-            });
-        },
-    );
-
-    const factoryNumOnChange = (factoryNum: number) => {
-        stateOnChange({
-            factoryNum,
-            productPerSec: state.factoryWithPlugin.productPerSec * factoryNum,
-            costPerSec: calCostList(
-                state.factoryWithPlugin.costPerSec,
-                factoryNum,
-            ),
-        });
-    };
-    return {
-        data: state,
-        factoryWithPluginInstance,
-        factoryNumOnChange,
+        groupProductPerSec: f.singleFactoryProductPerSec,
+        groupCostPerSec: calCostList(f.singleFactoryCostPerSec, 1),
     };
 };
 
 interface FactoryGroupUIProps {
     item: Item;
     instance?: FactoryGroupInstance;
+    freshHandle?: (state: FactoryGroupInstanceState) => void;
 }
 
+export const renderFormulaList: (
+    formulaList: Formula[],
+) => React.ReactElement[] = formulaList => {
+    const ret: React.ReactElement[] = [];
+    formulaList.forEach(f => {
+        ret.push(
+            <span key={f.item.name}>
+                <ItemIcon
+                    x={f.item.iconPosition[0]}
+                    y={f.item.iconPosition[1]}
+                />
+                {f.number.toFixed(2)}
+            </span>,
+        );
+    });
+    return ret;
+};
+
 const FactoryGroupUI: React.FC<FactoryGroupUIProps> = props => {
-    const { item, instance = useFactoryGroup(item) } = props;
-    const renderFormulaList: (
-        formulaList: Formula[],
-    ) => React.ReactElement[] = formulaList => {
-        const ret: React.ReactElement[] = [];
-        formulaList.forEach(f => {
-            ret.push(
-                <span key={f.item.name}>
-                    <ItemIcon
-                        x={f.item.iconPosition[0]}
-                        y={f.item.iconPosition[1]}
-                    />
-                    {f.number.toFixed(2)}
-                </span>,
-            );
-        });
-        return ret;
-    };
+    const {
+        item,
+        instance = useFactoryGroup(item),
+        freshHandle = () => {},
+    } = props;
+    useEffect(() => {
+        freshHandle(instance.data);
+    }, [instance.data]);
     return (
         <Row>
             <Col>
                 <FactoryWithPluginUI
                     item={item}
-                    instance={instance.factoryWithPluginInstance}
+                    freshHandle={instance.facWithPluFreshHandle}
+                    // instance={instance.factoryWithPluginInstance}
                 />
             </Col>
             <Col>
@@ -192,10 +171,11 @@ const FactoryGroupUI: React.FC<FactoryGroupUIProps> = props => {
                         style={{ width: '45px', display: 'inline-block' }}
                         value={instance.data.factoryNum}
                     />
-                    每秒产量：{instance.data.productPerSec.toFixed(2)}
+                    每组每秒产量：{instance.data.groupProductPerSec.toFixed(2)}
                 </Row>
                 <Row>
-                    每秒消耗: {renderFormulaList(instance.data.costPerSec)}
+                    每组每秒消耗:{' '}
+                    {renderFormulaList(instance.data.groupCostPerSec)}
                 </Row>
             </Col>
         </Row>

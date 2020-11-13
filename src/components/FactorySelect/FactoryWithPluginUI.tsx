@@ -1,67 +1,112 @@
 import Factory from '@/factorio/Factory';
-import React from 'react';
+import React, {
+    forwardRef,
+    Reducer,
+    useImperativeHandle,
+    useReducer,
+    useEffect,
+} from 'react';
 import { Select, InputNumber, Row, Col } from 'antd';
 import ItemIcon from '@/pages/ProductAnalysis/components/ItemIcon';
 import Item from '@/factorio/Item';
 import ManagerTool from '@/factorio/ManagerTool';
 import FactoryPlugin from '@/factorio/Plugin';
 import Formula from '@/factorio/Formula';
-import { useState } from 'react';
 
 export interface FactoryWithPluginState {
     item: Item;
     factory: Factory;
     pluginList: { plugin: FactoryPlugin; pluginNum: number }[];
     finalSpeed: number;
-    productPerSec: number;
-    costPerSec: Formula[];
+    singleFactoryProductPerSec: number;
+    singleFactoryCostPerSec: Formula[];
 }
 
 export interface FactoryWithPluginInstance {
     data: FactoryWithPluginState;
-    getPluginInOneList: () => FactoryPlugin[];
+    getPluginInOneList: (
+        pluginList: { plugin: FactoryPlugin; pluginNum: number }[],
+    ) => FactoryPlugin[];
     pluginOnChange: (plugin: FactoryPlugin, num: number) => void;
     factoryOnChange: (factory: Factory) => void;
 }
+
+const getPluginInOneList = (
+    pluginList: { plugin: FactoryPlugin; pluginNum: number }[],
+) => {
+    let ret: FactoryPlugin[] = [];
+    pluginList.forEach(pn => {
+        for (let i = 0; i < pn.pluginNum; i++) {
+            ret.push(pn.plugin);
+        }
+    });
+    return ret;
+};
+
+const reCal: (
+    state: FactoryWithPluginState,
+) => {
+    finalSpeed: number;
+    singleFactoryProductPerSec: number;
+    singleFactoryCostPerSec: Formula[];
+} = (state: FactoryWithPluginState) => {
+    console.log('FactoryWithPlugin reCal()');
+    let calResult1 = state.factory.analysisProduct(
+        state.item,
+        getPluginInOneList(state.pluginList),
+    );
+    return {
+        finalSpeed: calResult1.finalSpeed,
+        singleFactoryProductPerSec: calResult1.productPerSec[0].number,
+        singleFactoryCostPerSec: calResult1.costPerSec,
+    };
+};
+
+const reducer: Reducer<
+    FactoryWithPluginState,
+    { type: 'changeFactory' | 'changePlugin'; payload: any[] }
+> = (state, action) => {
+    switch (action.type) {
+        case 'changeFactory':
+            let factory: Factory = action.payload[0];
+            state.factory = factory;
+            return {
+                ...state,
+                factory,
+                ...reCal(state),
+            };
+        case 'changePlugin':
+            const [plugin, pluginNum] = action.payload;
+            state.pluginList.forEach(o => {
+                if (o.plugin.name == plugin.name) {
+                    o.pluginNum = pluginNum;
+                }
+            });
+            return {
+                ...state,
+                pluginList: [...state.pluginList],
+                ...reCal(state),
+            };
+        default:
+            throw new Error();
+    }
+};
 
 export const useFactoryWithPlugin: (
     item: Item,
     fresh?: () => void,
 ) => FactoryWithPluginInstance = (item: Item, fresh) => {
-    let m = ManagerTool.getInstance();
-    let defaultFactory = m.factory['3级工厂'];
-    let pluginList = [];
-    for (let i in m.plugin) {
-        pluginList.push({ plugin: m.plugin[i], pluginNum: 0 });
-    }
-
-    let calResult = defaultFactory.analysisProduct(item, []);
-    const [state, setState] = useState<FactoryWithPluginState>({
-        item: item,
-        factory: defaultFactory,
-        pluginList: pluginList,
-        finalSpeed: calResult.finalSpeed,
-        productPerSec: calResult.productPerSec[0].number,
-        costPerSec: calResult.costPerSec,
+    const [state, dispatch] = useReducer<
+        Reducer<
+            FactoryWithPluginState,
+            { type: 'changeFactory' | 'changePlugin'; payload: any[] }
+        >,
+        {}
+    >(reducer, {}, () => {
+        return factoryWithPluginStatelessBuilder(item);
     });
-    const getPluginInOneList = () => {
-        let ret: FactoryPlugin[] = [];
-        state.pluginList.forEach(pn => {
-            for (let i = 0; i < pn.pluginNum; i++) {
-                ret.push(pn.plugin);
-            }
-        });
-        return ret;
-    };
-
     const pluginOnChange = (plugin: FactoryPlugin, num: number) => {
-        console.log('FactoryWithPlugin pluginOnChange()');
-        state.pluginList.forEach(o => {
-            if (o.plugin.name == plugin.name) {
-                o.pluginNum = num;
-            }
-        });
-        setState({ ...state, pluginList: [...state.pluginList], ...reCal() });
+        dispatch({ type: 'changePlugin', payload: [plugin, num] });
         if (fresh) {
             fresh();
         }
@@ -69,23 +114,10 @@ export const useFactoryWithPlugin: (
 
     const factoryOnChange = (factory: Factory) => {
         console.log('FactoryWithPlugin factoryOnChange()');
-        setState({ ...state, factory, ...reCal() });
+        dispatch({ type: 'changeFactory', payload: [factory] });
         if (fresh) {
             fresh();
         }
-    };
-
-    const reCal = () => {
-        console.log('FactoryWithPlugin reCal()');
-        let calResult = state.factory.analysisProduct(
-            state.item,
-            getPluginInOneList(),
-        );
-        return {
-            finalSpeed: calResult.finalSpeed,
-            productPerSec: calResult.productPerSec[0].number,
-            costPerSec: calResult.costPerSec,
-        };
     };
 
     return {
@@ -112,77 +144,36 @@ export const factoryWithPluginStatelessBuilder: (
         factory: defaultFactory,
         pluginList: pluginList,
         finalSpeed: calResult.finalSpeed,
-        productPerSec: calResult.productPerSec[0].number,
-        costPerSec: calResult.costPerSec,
-    };
-};
-
-export const useFactoryWithPluginStateless: (
-    state: FactoryWithPluginState,
-    stateOnChange: (c: object) => void,
-) => FactoryWithPluginInstance = (state, stateOnChange) => {
-    const getPluginInOneList = () => {
-        let ret: FactoryPlugin[] = [];
-        state.pluginList.forEach(pn => {
-            for (let i = 0; i < pn.pluginNum; i++) {
-                ret.push(pn.plugin);
-            }
-        });
-        return ret;
-    };
-    const reCal = (factory?: Factory) => {
-        console.log('FactoryWithPlugin reCal()');
-        let calResult;
-        if (factory) {
-            calResult = factory.analysisProduct(
-                state.item,
-                getPluginInOneList(),
-            );
-        } else {
-            calResult = state.factory.analysisProduct(
-                state.item,
-                getPluginInOneList(),
-            );
-        }
-
-        return {
-            finalSpeed: calResult.finalSpeed,
-            productPerSec: calResult.productPerSec[0].number,
-            costPerSec: calResult.costPerSec,
-        };
-    };
-
-    const pluginOnChange = (plugin: FactoryPlugin, num: number) => {
-        console.log('FactoryWithPlugin pluginOnChange()');
-        state.pluginList.forEach(o => {
-            if (o.plugin.name == plugin.name) {
-                o.pluginNum = num;
-            }
-        });
-        stateOnChange({ pluginList: [...state.pluginList], ...reCal() });
-    };
-
-    const factoryOnChange = (factory: Factory) => {
-        console.log('FactoryWithPlugin factoryOnChange()');
-        stateOnChange({ factory, ...reCal(factory) });
-    };
-    return {
-        data: state,
-        getPluginInOneList,
-        pluginOnChange,
-        factoryOnChange,
+        singleFactoryProductPerSec: calResult.productPerSec[0].number,
+        singleFactoryCostPerSec: calResult.costPerSec,
     };
 };
 
 interface FactoryWithPluginUIProps {
     item: Item;
     instance?: FactoryWithPluginInstance;
+    freshHandle?: (state: FactoryWithPluginState) => void;
 }
 
-const FactoryWithPluginUI: React.FC<FactoryWithPluginUIProps> = props => {
-    const { item, instance = useFactoryWithPlugin(item) } = props;
+const FactoryWithPluginUI: React.ForwardRefRenderFunction<
+    FactoryWithPluginState,
+    FactoryWithPluginUIProps
+> = (props, ref) => {
+    const { item, instance = useFactoryWithPlugin(item), freshHandle } = props;
     const manager = ManagerTool.getInstance();
-
+    useImperativeHandle(
+        ref,
+        () => {
+            // console.log('--useImperativeHandle');
+            return { ...instance.data };
+        },
+        [instance.data],
+    );
+    useEffect(() => {
+        if (freshHandle) {
+            freshHandle(instance.data);
+        }
+    }, [instance.data]);
     const renderFormulaList: (
         formulaList: Formula[],
     ) => React.ReactElement[] = formulaList => {
@@ -281,16 +272,20 @@ const FactoryWithPluginUI: React.FC<FactoryWithPluginUIProps> = props => {
                     <div style={{ marginTop: '12px', marginBottom: '12px' }}>
                         <span>速度：{instance.data.finalSpeed.toFixed(2)}</span>
                         <span style={{ marginLeft: '8px' }}>
-                            产量每秒：{instance.data.productPerSec.toFixed(2)}
+                            单工厂产量每秒：
+                            {instance.data.singleFactoryProductPerSec.toFixed(
+                                2,
+                            )}
                         </span>
                     </div>
                 </Col>
                 <Col>
-                    每秒消耗：{renderFormulaList(instance.data.costPerSec)}
+                    单工厂每秒消耗：
+                    {renderFormulaList(instance.data.singleFactoryCostPerSec)}
                 </Col>
             </Row>
         </div>
     );
 };
 
-export default FactoryWithPluginUI;
+export default forwardRef(FactoryWithPluginUI);
