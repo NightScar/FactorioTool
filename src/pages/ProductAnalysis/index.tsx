@@ -14,7 +14,8 @@ import FactoryGroupUI, {
     FactoryGroupInstanceState,
 } from '../../components/FactorySelect/FactoryGroupUI';
 import FactoryGroupHolderUI, {
-     FactoryGroupHolderState, factoryGroupHolderStatelessBuilder, 
+    FactoryGroupHolderState,
+    factoryGroupHolderStatelessBuilder,
 } from '@/components/FactorySelect/FactoryGroupHolderUI';
 import { useState } from 'react';
 
@@ -46,13 +47,13 @@ const ProductAnalysis: React.FC<ProductAnalysisProps> = props => {
                     {/* <ItemSelectArea add={add} {...p} title="生产列表" /> */}
                 </Col>
                 <Col span={18}>
-                    <ItemIcon x={4} y={1} />
-                    <FactoryGroupUI item={manager.items['红瓶']}/>
+                    {/* <ItemIcon x={4} y={1} />
+                    <FactoryGroupUI item={manager.items['红瓶']}/> */}
                     {/* <FactoryGroupUI
                         item={manager.items['红瓶']}
                         instance={ins}
                     /> */}
-                    <FactoryGroupHolderUI item={manager.items['红瓶']} />
+                    {/* <FactoryGroupHolderUI item={manager.items['红瓶']} /> */}
                 </Col>
             </Row>
             <Row gutter={24}>
@@ -65,7 +66,6 @@ const ProductAnalysis: React.FC<ProductAnalysisProps> = props => {
                 </Col>
                 <Col span={18}>
                     <ItemProductAnalysisList proAna={proAnaInstance} />
-                    {/* <FormulaTable dataSource={formulaResult} {...p} /> */}
                 </Col>
             </Row>
         </Card>

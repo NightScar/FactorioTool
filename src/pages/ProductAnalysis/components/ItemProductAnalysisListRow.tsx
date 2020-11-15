@@ -1,74 +1,18 @@
-import React from 'react';
-import { List, Descriptions, Row, Col, Button } from 'antd';
+import React, { MutableRefObject } from 'react';
+import { List, Descriptions, Row, Col } from 'antd';
 import ItemIcon from './ItemIcon';
-import Formula from '@/factorio/Formula';
-import {
-    FactoryGroup,
-    FactoryGroupHolder,
-} from '@/factorio/Factory';
-import { PlusOutlined } from '@ant-design/icons';
-import FactoryWithPluginUI from '../../../components/FactorySelect/FactoryWithPluginUI';
+import FactoryGroupHolderUI, {
+    FactoryGroupHolderState,
+} from '@/components/FactorySelect/FactoryGroupHolderUI';
 
 export interface ItemProductAnalysisListRowProps {
-    groupHolder: FactoryGroupHolder;
+    groupHolder: MutableRefObject<FactoryGroupHolderState>;
 }
 
 const ItemProductAnalysisListRow: React.FC<ItemProductAnalysisListRowProps> = props => {
     const { groupHolder } = props;
-    const item = groupHolder.item;
-    const renderFormulaList: (
-        formulaList: Formula[],
-    ) => React.ReactElement[] = formulaList => {
-        const ret: React.ReactElement[] = [];
-        formulaList.forEach(f => {
-            ret.push(
-                <span key={f.item.name}>
-                    <ItemIcon
-                        x={f.item.iconPosition[0]}
-                        y={f.item.iconPosition[1]}
-                    />
-                    {f.number}
-                </span>,
-            );
-        });
-        return ret;
-    };
-
-    const factorySelectItemRender: (
-        factoryGroup: FactoryGroup,
-        index: number,
-    ) => React.ReactElement = (factoryGroup: FactoryGroup, index: number) => {
-        return (
-            <List.Item
-                key={factoryGroup.factoryWithPlugin.factory.name + index}
-            >
-                <FactoryWithPluginUI instance={factoryGroup.factoryWithPlugin} item={factoryGroup.factoryWithPlugin.item}/>
-                <div style={{ display: 'inline-block', width: '100px' }}>
-                    速度：{factoryGroup.factoryWithPlugin.finalSpeed.toFixed(3)}
-                    每秒产量：{factoryGroup.factoryWithPlugin.productPerSec.toFixed(2)}
-                </div>
-            </List.Item>
-        );
-    };
-
-    const factoryGroupHolderRender: (
-        holder: FactoryGroupHolder,
-    ) => React.ReactElement = holder => {
-        return (
-            <List
-                bordered
-                header={
-                    <Button type={'dashed'} style={{ width: '100%' }}>
-                        <PlusOutlined />
-                    </Button>
-                }
-            >
-                {holder.groups.map((o, index) => {
-                    return factorySelectItemRender(o, index);
-                })}
-            </List>
-        );
-    };
+    const item =
+        groupHolder.current.factoryGroupHolder[0].factoryWithPlugin.item;
 
     return (
         <List.Item>
@@ -85,7 +29,8 @@ const ItemProductAnalysisListRow: React.FC<ItemProductAnalysisListRowProps> = pr
                     />
                 </Col>
                 <Col span={20}>
-                    <Descriptions column={4} bordered size={'small'}>
+                    <FactoryGroupHolderUI item={item} ref={groupHolder} />
+                    {/* <Descriptions column={4} bordered size={'small'}>
                         <Descriptions.Item label={'生产时间：'}>
                             {item.buildTime + 's'}
                         </Descriptions.Item>
@@ -98,7 +43,7 @@ const ItemProductAnalysisListRow: React.FC<ItemProductAnalysisListRowProps> = pr
                         <Descriptions.Item label={'生产工厂：'} span={4}>
                             {factoryGroupHolderRender(groupHolder)}
                         </Descriptions.Item>
-                    </Descriptions>
+                    </Descriptions> */}
                 </Col>
             </Row>
         </List.Item>

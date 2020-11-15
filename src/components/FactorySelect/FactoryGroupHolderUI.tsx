@@ -10,6 +10,9 @@ import FactoryGroupUI from './FactoryGroupUI';
 import Formula from '@/factorio/Formula';
 import { Bar } from '@ant-design/charts';
 import { renderFormulaList } from './FactoryGroupUI';
+import { forwardRef } from 'react';
+import { useImperativeHandle } from 'react';
+import { useEffect } from 'react';
 
 export interface FactoryGroupHolderState {
     factoryGroupHolder: { [index: number]: FactoryGroupInstanceState };
@@ -23,11 +26,6 @@ export interface FactoryGroupHolderInstance {
         groupState: FactoryGroupInstanceState,
         index: number,
     ) => void;
-}
-
-interface FactoryGroupHolderUIProps {
-    item: Item;
-    instance?: FactoryGroupHolderInstance;
 }
 
 const reCal = (factoryGroupHolder: {
@@ -123,8 +121,32 @@ export const factoryGroupHolderStatelessBuilder: (
     };
 };
 
-const FactoryGroupHolderUI: React.FC<FactoryGroupHolderUIProps> = props => {
-    const { item, instance = useFactoryGroupHolder(item) } = props;
+interface FactoryGroupHolderUIProps {
+    item: Item;
+    instance?: FactoryGroupHolderInstance;
+    freshHandle?: (state: FactoryGroupHolderState) => void;
+}
+
+const FactoryGroupHolderUI: React.ForwardRefRenderFunction<
+    FactoryGroupHolderState,
+    FactoryGroupHolderUIProps
+> = (props, ref) => {
+    const {
+        item,
+        instance = useFactoryGroupHolder(item),
+        freshHandle = () => {},
+    } = props;
+    useImperativeHandle(
+        ref,
+        () => {
+            // console.log('--useImperativeHandle');
+            return { ...instance.data };
+        },
+        [instance.data],
+    );
+    useEffect(() => {
+        freshHandle(instance.data);
+    }, [instance.data]);
 
     const factorySelectItemRender: (
         factoryGroup: FactoryGroupInstanceState,
@@ -184,7 +206,13 @@ const FactoryGroupHolderUI: React.FC<FactoryGroupHolderUIProps> = props => {
             height: 300,
             authFit: false,
             isStack: true,
+            isGroup: true,
             seriesField: 'type',
+            label: {
+                style: {
+                    fill: 'red',
+                },
+            },
         };
         return (
             <div style={{ width: '1000px', height: '120px' }}>
@@ -216,7 +244,10 @@ const FactoryGroupHolderUI: React.FC<FactoryGroupHolderUIProps> = props => {
                                 {instance.data.holderProductPerSec.toFixed(2)}
                             </span>{' '}
                             <span style={{ marginRight: '32px' }}>
-                                总需求：{renderFormulaList(instance.data.holderCostPerSec)}
+                                总需求：
+                                {renderFormulaList(
+                                    instance.data.holderCostPerSec,
+                                )}
                             </span>{' '}
                         </div>
                     </>
@@ -229,4 +260,4 @@ const FactoryGroupHolderUI: React.FC<FactoryGroupHolderUIProps> = props => {
     );
 };
 
-export default FactoryGroupHolderUI;
+export default forwardRef(FactoryGroupHolderUI);
