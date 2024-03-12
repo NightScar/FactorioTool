@@ -1,12 +1,12 @@
-import { FactoryConfig } from './factoryConfig';
 import Item from '@/factorio/Item';
-import FactoryPlugin from './Plugin';
+import { makeAutoObservable } from 'mobx';
 import Formula from './Formula';
-import { plugin } from 'umi';
 import ManagerTool from './ManagerTool';
+import FactoryPlugin from './Plugin';
+import { FactoryConfig } from './factoryConfig';
 
 export interface FactoryAnalysisResult {
-    factory: Factory;
+    factory: FactoryDefinition;
     item: Item;
     finalSpeed: number;
     costPerSec: Formula[];
@@ -21,13 +21,16 @@ export interface FactoryContent {
     iconPosition: number[];
 }
 
-class Factory {
+/**
+ * 工厂定义
+ **/
+class FactoryDefinition {
+    /** 工程名称 */
     readonly name: string;
     readonly icon: string;
     readonly speed: number;
     readonly space: number;
     readonly iconPosition: number[];
-    onFresh?: ()=>void;
 
     constructor(
         name: string,
@@ -43,17 +46,16 @@ class Factory {
         this.iconPosition = iconPosition;
     }
 
-    public static loadFromConfig: (
-        config: FactoryConfig,
-    ) => Factory = config => {
-        return new Factory(
-            config.name,
-            config.icon,
-            config.speed,
-            config.space,
-            config.iconPosition,
-        );
-    };
+    public static loadFromConfig: (config: FactoryConfig) => FactoryDefinition =
+        (config) => {
+            return new FactoryDefinition(
+                config.name,
+                config.icon,
+                config.speed,
+                config.space,
+                config.iconPosition,
+            );
+        };
 
     public getIconUrl: () => string = () => {
         return '/icon/' + this.icon + '.png';
@@ -65,7 +67,7 @@ class Factory {
     ) => FactoryAnalysisResult = (item, plugins) => {
         let s = 100,
             pr = 100;
-        plugins.forEach(p => {
+        plugins.forEach((p) => {
             s = s + parseInt((p.speedUp * 100).toString());
             pr = pr + parseInt((p.productUp * 100.0).toString());
         });
@@ -73,7 +75,7 @@ class Factory {
         let finalProduct = pr / 100.0;
         let perSecProductLoop = finalSpeed / (item.buildTime * 1.0);
         let costRet: Formula[] = [];
-        item.formulaList.forEach(f => {
+        item.formulaList.forEach((f) => {
             costRet.push(new Formula(f.item, f.number * perSecProductLoop));
         });
         let productPerSec: Formula[] = [];
@@ -88,7 +90,7 @@ class Factory {
     };
 
     public static allFactory() {
-        let ret: Factory[] = [];
+        let ret: FactoryDefinition[] = [];
         const m = ManagerTool.getInstance();
         for (let i in m.factory) {
             ret.push(m.factory[i]);
@@ -97,114 +99,115 @@ class Factory {
     }
 }
 
-export class FactoryWithPlugin {
+/** 工厂实例 */
+export class FactoryInstance {
+    factoryDefinition: FactoryDefinition;
     item: Item;
-    factory: Factory;
-    pluginList: { plugin: FactoryPlugin; pluginNum: number }[];
-    finalSpeed: number = 1.0;
-    productPerSec: number = 1;
-    costPerSec: Formula[] = [];
-    onFresh?: ()=>void;
+    pulignList: PluginList = new PluginList();
 
-    constructor(item: Item, factory: Factory) {
-        console.log('FactoryWithPlugin constructor()');
+    constructor(item: Item, factory: FactoryDefinition) {
         this.item = item;
-        this.factory = factory;
-        this.pluginList = [];
+        this.factoryDefinition = factory;
+        makeAutoObservable(this);
+    }
+
+    public static defaultFactory(): FactoryInstance {
+        let m = ManagerTool.getInstance();
+        let factory = m.factory['3级工厂'];
+        let item = m.items['铁板'];
+        return new FactoryInstance(item, factory);
+    }
+
+    public static defaultFactoryWithItem(item: Item): FactoryInstance {
+        let m = ManagerTool.getInstance();
+        let factory = m.factory['3级工厂'];
+        return new FactoryInstance(item, factory);
+    }
+
+    public get analysisResult(): FactoryAnalysisResult {
+        return this.factoryDefinition.analysisProduct(
+            this.item,
+            this.pulignList.flatten(),
+        );
+    }
+
+    public get productPerSec(): Formula[] {
+        return this.analysisResult.productPerSec;
+    }
+
+    public get costPerSec(): Formula[] {
+        return this.analysisResult.costPerSec;
+    }
+}
+
+export class PluginList {
+    pluginList: { plugin: FactoryPlugin; pluginNum: number }[] = [];
+
+    constructor() {
         const m = ManagerTool.getInstance();
         for (let i in m.plugin) {
             this.pluginList.push({ plugin: m.plugin[i], pluginNum: 0 });
         }
+        makeAutoObservable(this);
     }
 
-    public getPluginInOneList() {
+    public onChange(pluginName: string, num: number) {
+        console.log('PluginList pluginOnChange()');
+        this.pluginList.forEach((o) => {
+            if (o.plugin.name == pluginName) {
+                o.pluginNum = num;
+            }
+        });
+    }
+
+    /**平铺插件 */
+    public flatten() {
         let ret: FactoryPlugin[] = [];
-        this.pluginList.forEach(pn => {
+        this.pluginList.forEach((pn) => {
             for (let i = 0; i < pn.pluginNum; i++) {
                 ret.push(pn.plugin);
             }
         });
         return ret;
     }
-
-    public pluginOnChange(plugin: FactoryPlugin, num: number) {
-        console.log('FactoryWithPlugin pluginOnChange()');
-        this.pluginList.forEach(o => {
-            if (o.plugin.name == plugin.name) {
-                o.pluginNum = num;
-            }
-        });
-        this.reCal();
-    }
-
-    public factoryOnChange(factory: Factory) {
-        console.log('FactoryWithPlugin factoryOnChange()');
-        this.factory = factory;
-        this.reCal();
-    }
-
-    public reCal() {
-        console.log('FactoryWithPlugin reCal()');
-        let calResult = this.factory.analysisProduct(
-            this.item,
-            this.getPluginInOneList(),
-        );
-        this.finalSpeed = calResult.finalSpeed;
-        this.productPerSec = calResult.productPerSec[0].number;
-        this.costPerSec = calResult.costPerSec;
-        if(this.onFresh){
-            this.onFresh();
-        }
-    }
-
-    public static defaultInstance(item: Item) {
-        console.log('FactoryWithPlugin defaultInstance()');
-        let m = ManagerTool.getInstance();
-        return new FactoryWithPlugin(item, m.factory['3级工厂']);
-    }
 }
 
 export class FactoryGroup {
-    factoryWithPlugin: FactoryWithPlugin;
-    factoryNum: number = 1;
+    private factoryInstance: FactoryInstance;
+    private factoryNum: number = 1;
     productPerSec: number;
     costPerSec: Formula[];
-    onFresh?: ()=>void;
+    onFresh?: () => void;
 
-    constructor(item: Item, factory: Factory) {
-        console.log('FactoryGroup constructor()');
-        this.factoryWithPlugin = new FactoryWithPlugin(item, factory);
-        this.productPerSec =
-            this.factoryWithPlugin.productPerSec * this.factoryNum;
-        this.costPerSec = [];
-        this.reCalCostList();
-        this.factoryWithPlugin.onFresh = () => { this.factoryWithPlugin = { ...this.factoryWithPlugin} };
+    constructor(factoryInstance: FactoryInstance) {
+        this.factoryInstance = factoryInstance;
     }
 
-    private reCalCostList() {
-        console.log('FactoryGroup reCalCostList()');
-        let list: Formula[] = [];
-        this.factoryWithPlugin.costPerSec.forEach(f => {
-            list.push(new Formula(f.item, f.number * this.factoryNum));
+    public static defaultFactoryGroup() {
+        return new FactoryGroup(FactoryInstance.defaultFactory());
+    }
+
+    public getProductPerSec(): Formula[] {
+        return this.factoryInstance.getProductPreSec().map((f) => {
+            f.number = f.number * this.factoryNum;
         });
-        this.costPerSec = list;
     }
 
-    public reCal() {
-        console.log('FactoryGroup reCal()');
-        this.factoryWithPlugin.reCal();
-        this.reCalCostList();
-        this.productPerSec =
-            this.factoryWithPlugin.productPerSec * this.factoryNum;
+    public getCostPerSec() {
+        this.factoryInstance.getCostPerSec().map((f) => {
+            f.number = f.number * this.factoryNum;
+        });
     }
 
-    public factoryNumOnChange(factoryNum: number) {
-        console.log('FactoryGroup factoryNumOnChange()');
+    public getFactoryNum() {
+        return this.factoryNum;
+    }
+    public changeNum(factoryNum: number) {
         this.factoryNum = factoryNum;
         this.reCal();
     }
 
-    public changeFactory(factory: Factory) {
+    public changeFactory(factory: FactoryDefinition) {
         console.log('FactoryGroup changeFactory()');
         this.factoryWithPlugin.factoryOnChange(factory);
         this.reCal();
@@ -222,7 +225,7 @@ export class FactoryGroupHolder {
     groups: FactoryGroup[] = [];
     productPerSec: number;
     costPerSec: Formula[];
-    onFresh?: ()=>void;
+    onFresh?: () => void;
 
     constructor(item: Item) {
         console.log('FactoryGroupHolder constructor()');
@@ -244,13 +247,13 @@ export class FactoryGroupHolder {
         console.log('FactoryGroupHolder reCal()');
         let p: number = 0;
         let c: Formula[] = [];
-        this.groups.forEach(g => {
+        this.groups.forEach((g) => {
             p = p + g.productPerSec;
             Formula.mergeList(c, g.costPerSec);
         });
         this.productPerSec = p;
         this.costPerSec = c;
-        if(this.onFresh){
+        if (this.onFresh) {
             this.onFresh();
         }
     }
@@ -264,7 +267,7 @@ export class FactoryGroupHolder {
         this.reCal();
     }
 
-    public changeFactory(factory: Factory, groupIndex: number) {
+    public changeFactory(factory: FactoryDefinition, groupIndex: number) {
         console.log('FactoryGroupHolder changeFactory()');
         let g: FactoryGroup = this.groups[groupIndex];
         g.changeFactory(factory);
@@ -290,4 +293,4 @@ export class FactoryGroupHolder {
     }
 }
 
-export default Factory;
+export default FactoryDefinition;

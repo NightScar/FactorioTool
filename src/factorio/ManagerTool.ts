@@ -1,19 +1,19 @@
+import FactoryDefinition from './Factory';
 import Formula from './Formula';
 import Item from './Item';
-import ItemConfig from './itemConfig';
-import Factory from './Factory';
 import FactoryPlugin from './Plugin';
 import FactoryConfig from './factoryConfig';
+import ItemConfig from './itemConfig';
 
 class ManagerTool {
     items: { [name: string]: Item } = {};
-    factory: { [name: string]: Factory } = {};
+    factory: { [name: string]: FactoryDefinition } = {};
     plugin: { [name: string]: FactoryPlugin } = {};
 
     private static _instance: ManagerTool;
 
     initItem(): void {
-        ItemConfig.items.forEach(config => {
+        ItemConfig.items.forEach((config) => {
             this.items[config.name] = new Item(
                 config.name,
                 config.buildTime,
@@ -21,8 +21,8 @@ class ManagerTool {
                 config.iconPosition,
             );
         });
-        ItemConfig.items.forEach(config => {
-            config.formulaList.forEach(formulaConfig => {
+        ItemConfig.items.forEach((config) => {
+            config.formulaList.forEach((formulaConfig) => {
                 this.items[config.name].formulaList.push(
                     new Formula(
                         this.items[formulaConfig.name],
@@ -31,12 +31,21 @@ class ManagerTool {
                 );
             });
         });
-        FactoryConfig.factory.forEach(c => {
-            this.factory[c.name] = Factory.loadFromConfig(c);
+        FactoryConfig.factory.forEach((c) => {
+            this.factory[c.name] = FactoryDefinition.loadFromConfig(c);
         });
-        FactoryConfig.plugin.forEach(c => {
+        FactoryConfig.plugin.forEach((c) => {
             this.plugin[c.name] = FactoryPlugin.loadFromConfig(c);
         });
+    }
+
+    /** 获取所有的工厂定义 */
+    public getAllFactoryDefinition(): FactoryDefinition[] {
+        let ret = [];
+        for (let i in this.factory) {
+            ret.push(this.factory[i]);
+        }
+        return ret;
     }
 
     public static getInstance(): ManagerTool {
@@ -49,11 +58,11 @@ class ManagerTool {
 
     public expandFormulaList(fl: { name: string; num: number }[]): Formula[] {
         let sourceList: Formula[] = [];
-        fl.forEach(f => {
+        fl.forEach((f) => {
             sourceList.push(new Formula(this.items[f.name], f.num));
         });
         let ret: Formula[] = [];
-        sourceList.forEach(f => {
+        sourceList.forEach((f) => {
             Formula.mergeList(ret, f.expandToHistory());
         });
         return ret;

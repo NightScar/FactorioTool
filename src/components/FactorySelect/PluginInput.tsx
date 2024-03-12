@@ -1,40 +1,48 @@
-import ManagerTool from '@/factorio/ManagerTool';
-import React from 'react';
-import { InputNumber } from 'antd';
-import { useState } from 'react';
+import { PluginList } from '@/factorio/Factory';
 import ItemIcon from '@/pages/ProductAnalysis/components/ItemIcon';
-import FactoryPlugin from '../../factorio/Plugin';
+import { InputNumber } from 'antd';
+import { observer } from 'mobx-react-lite';
+import React from 'react';
 
-interface PluginInputProps {
-    onChange: (plugin: FactoryPlugin, num: number) => void;
-    pluginItem: { plugin: FactoryPlugin; num: number }[];
+export interface PluginInputProps {
+    pluginList: PluginList;
 }
 
-const PluginInput: React.FC<PluginInputProps> = props => {
-    const { onChange, pluginItem } = props;
-
-    const itemRender : () => React.ReactElement[] = () => {
-        let ret : React.ReactElement[] = [];
-        pluginItem.forEach( pI => {
-            ret.push(<div key={pI.plugin.name} style={{display: 'inline-block', height: '40px'}}>
-                <ItemIcon x={pI.plugin.iconPosition[0]} y={pI.plugin.iconPosition[1]} />
-                <InputNumber
-                    min={0}
-                    defaultValue={0}
-                    step={1}
-                    onChange={(v: string | number | undefined)=>{ onChange(pI.plugin, parseInt(v? v.toString() : '0'))}}
-                    style={{ width: '50px', display: 'inline-block' }}
-                    value={pI.num}
-                />
-            </div>);});
-        return ret;
-    };
+const PluginInput: React.FC<PluginInputProps> = (props) => {
+    const { pluginList } = props;
 
     return (
-        <div style={{display: 'inline-block'}}>
-            {itemRender()}
+        <div style={{ display: 'flex' }}>
+            {pluginList.pluginList.map((pI) => (
+                <div
+                    key={pI.plugin.name}
+                    style={{ display: 'flex', height: '35px' }}
+                >
+                    <ItemIcon
+                        x={pI.plugin.iconPosition[0]}
+                        y={pI.plugin.iconPosition[1]}
+                    />
+                    <InputNumber
+                        min={0}
+                        defaultValue={0}
+                        step={1}
+                        onChange={(v: number | null) => {
+                            pluginList.onChange(
+                                pI.plugin.name,
+                                parseInt(v ? v.toString() : '0'),
+                            );
+                        }}
+                        style={{
+                            width: '50px',
+                            display: 'inline-block',
+                            marginTop: '0px',
+                        }}
+                        value={pI.pluginNum}
+                    />
+                </div>
+            ))}
         </div>
     );
 };
 
-export default PluginInput;
+export default observer(PluginInput);

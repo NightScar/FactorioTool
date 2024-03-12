@@ -1,79 +1,79 @@
-import React, { useState } from 'react';
+import Item from '@/factorio/Item';
+import ManagerTool from '@/factorio/ManagerTool';
+import { MinusOutlined, PlusOutlined } from '@ant-design/icons';
 import { Divider, Tag } from 'antd';
-import { PlusOutlined, MinusOutlined} from '@ant-design/icons';
+import { makeAutoObservable } from 'mobx';
+import { observer } from 'mobx-react-lite';
+import React from 'react';
 
-interface ItemSelectAreaProps { 
+export class ItemContainer {
+    itemPairList: { item: Item; num: number }[] = [];
+    constructor() {
+        makeAutoObservable(this);
+    }
+
+    public increase(itemName: string) {
+        console.log('increase:', itemName);
+        let flag: boolean = false;
+        this.itemPairList.forEach((i) => {
+            if (i.item.name == itemName) {
+                i.num += 1;
+                flag = true;
+                return;
+            }
+        });
+        if (!flag) {
+            let item = ManagerTool.getInstance().items[itemName];
+            this.itemPairList.push({ item, num: 1 });
+        }
+    }
+
+    public decrease(itemName: string) {
+        console.log('decrease:', itemName);
+        for (let i = 0; i < this.itemPairList.length; i++) {
+            let target = this.itemPairList[i];
+            if (target.item.name == itemName) {
+                if (target.num == 1) {
+                    this.itemPairList.splice(i, 1);
+                    return;
+                }
+                target.num -= 1;
+                return;
+            }
+        }
+    }
+
+    public clear() {
+        this.itemPairList.splice(0, this.itemPairList.length);
+    }
+}
+
+export interface ItemSelectAreaProps {
     title: string;
-    data: ItemData;
-    add: (name: string) => void;
-    remove: (name: string) => void;
-    decrease: (name: string) => void;
-}
-export interface ItemData{
-    [itemName: string]: number
+    container: ItemContainer;
 }
 
-export const useItemSelectArea: () => {
-    data: ItemData;
-    add: (name: string) => void;
-    remove: (name: string) => void;
-    decrease: (name: string) => void;
-} = () => {
-    const [ data, setData ] = useState<ItemData>({});
-    const add = (name: string) => {
-        if (!data[name]) {
-            data[name] = 1;
-        } else {
-            data[name]++;
-        }
-        console.log("add:" + name);
-        setData({...data});
-    };
-    const remove = (name: string) => {
-        delete data[name];
-        setData({...data});
-    };
-    const decrease = (name: string) => {
-        if (data[name]) {
-            data[name]--;
-        }
-        setData({...data});
-    }
-    return {
-        data,
-        add,
-        remove,
-        decrease
-    }
-}
+const ItemSelectArea: React.FC<ItemSelectAreaProps> = (props) => {
+    const { title, container } = props;
 
-const ItemSelectArea : React.FC<ItemSelectAreaProps> = (props) => {
-    const { title, data, add, remove, decrease } = props;
-    const renderTags: () => React.ReactElement[] = () => {
-        let ret: React.ReactElement[] = [];
-        for (let name in data) {
-            ret.push(<Tag
-                key={name}
-                closable
-                onClose={() => remove(name)}
-                color={'geekblue'}
-            >
-                {name}: {data[name]}
-                <PlusOutlined onClick={() => add(name)}/>                    
-                <MinusOutlined onClick={()=>decrease(name)}/>
-            </Tag >);
-        }
-        return ret;
-    };
-
-    return <div style={{height: 150}}>
-        <Divider orientation='left'>
-            {title}
-        </Divider>
-        <div>
-            {renderTags()}
+    return (
+        <div style={{ height: 150 }}>
+            <Divider orientation="left">{title}</Divider>
+            <div>
+                {container.itemPairList.map((i) => (
+                    <Tag key={i.item.name} color={'geekblue'}>
+                        {i.item.name}: {i.num}
+                        <PlusOutlined
+                            onClick={() => container.increase(i.item.name)}
+                        />
+                        <MinusOutlined
+                            onClick={() => container.decrease(i.item.name)}
+                        />
+                    </Tag>
+                ))}
+            </div>
         </div>
-    </div>;
+    );
 };
 
-export default ItemSelectArea;
+export default observer(ItemSelectArea);

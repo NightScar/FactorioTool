@@ -1,21 +1,21 @@
-import Factory from '@/factorio/Factory';
-import React, {
-    forwardRef,
-    Reducer,
-    useImperativeHandle,
-    useReducer,
-    useEffect,
-} from 'react';
-import { Select, InputNumber, Row, Col } from 'antd';
-import ItemIcon from '@/pages/ProductAnalysis/components/ItemIcon';
+import FactoryDefinition from '@/factorio/Factory';
+import Formula from '@/factorio/Formula';
 import Item from '@/factorio/Item';
 import ManagerTool from '@/factorio/ManagerTool';
 import FactoryPlugin from '@/factorio/Plugin';
-import Formula from '@/factorio/Formula';
+import ItemIcon from '@/pages/ProductAnalysis/components/ItemIcon';
+import { Col, InputNumber, Row, Select } from 'antd';
+import React, {
+    Reducer,
+    forwardRef,
+    useEffect,
+    useImperativeHandle,
+    useReducer,
+} from 'react';
 
 export interface FactoryWithPluginState {
     item: Item;
-    factory: Factory;
+    factory: FactoryDefinition;
     pluginList: { plugin: FactoryPlugin; pluginNum: number }[];
     finalSpeed: number;
     singleFactoryProductPerSec: number;
@@ -28,14 +28,14 @@ export interface FactoryWithPluginInstance {
         pluginList: { plugin: FactoryPlugin; pluginNum: number }[],
     ) => FactoryPlugin[];
     pluginOnChange: (plugin: FactoryPlugin, num: number) => void;
-    factoryOnChange: (factory: Factory) => void;
+    factoryOnChange: (factory: FactoryDefinition) => void;
 }
 
 const getPluginInOneList = (
     pluginList: { plugin: FactoryPlugin; pluginNum: number }[],
 ) => {
     let ret: FactoryPlugin[] = [];
-    pluginList.forEach(pn => {
+    pluginList.forEach((pn) => {
         for (let i = 0; i < pn.pluginNum; i++) {
             ret.push(pn.plugin);
         }
@@ -43,9 +43,7 @@ const getPluginInOneList = (
     return ret;
 };
 
-const reCal: (
-    state: FactoryWithPluginState,
-) => {
+const reCal: (state: FactoryWithPluginState) => {
     finalSpeed: number;
     singleFactoryProductPerSec: number;
     singleFactoryCostPerSec: Formula[];
@@ -68,7 +66,7 @@ const reducer: Reducer<
 > = (state, action) => {
     switch (action.type) {
         case 'changeFactory':
-            let factory: Factory = action.payload[0];
+            let factory: FactoryDefinition = action.payload[0];
             state.factory = factory;
             return {
                 ...state,
@@ -77,7 +75,7 @@ const reducer: Reducer<
             };
         case 'changePlugin':
             const [plugin, pluginNum] = action.payload;
-            state.pluginList.forEach(o => {
+            state.pluginList.forEach((o) => {
                 if (o.plugin.name == plugin.name) {
                     o.pluginNum = pluginNum;
                 }
@@ -112,7 +110,7 @@ export const useFactoryWithPlugin: (
         }
     };
 
-    const factoryOnChange = (factory: Factory) => {
+    const factoryOnChange = (factory: FactoryDefinition) => {
         console.log('FactoryWithPlugin factoryOnChange()');
         dispatch({ type: 'changeFactory', payload: [factory] });
         if (fresh) {
@@ -130,7 +128,7 @@ export const useFactoryWithPlugin: (
 
 export const factoryWithPluginStatelessBuilder: (
     item: Item,
-) => FactoryWithPluginState = item => {
+) => FactoryWithPluginState = (item) => {
     let m = ManagerTool.getInstance();
     let defaultFactory = m.factory['3级工厂'];
     let pluginList = [];
@@ -176,9 +174,9 @@ const FactoryWithPluginUI: React.ForwardRefRenderFunction<
     }, [instance.data]);
     const renderFormulaList: (
         formulaList: Formula[],
-    ) => React.ReactElement[] = formulaList => {
+    ) => React.ReactElement[] = (formulaList) => {
         const ret: React.ReactElement[] = [];
-        formulaList.forEach(f => {
+        formulaList.forEach((f) => {
             ret.push(
                 <span key={f.item.name}>
                     <ItemIcon
@@ -193,8 +191,8 @@ const FactoryWithPluginUI: React.ForwardRefRenderFunction<
     };
     const factoryOptionRender = () => {
         let ret: React.ReactElement[] = [];
-        let fList = Factory.allFactory();
-        fList.forEach(f => {
+        let fList = FactoryDefinition.allFactory();
+        fList.forEach((f) => {
             ret.push(
                 <Select.Option
                     key={f.name}
@@ -212,7 +210,7 @@ const FactoryWithPluginUI: React.ForwardRefRenderFunction<
 
     const pluginRender: () => React.ReactElement[] = () => {
         let ret: React.ReactElement[] = [];
-        instance.data.pluginList.forEach(pI => {
+        instance.data.pluginList.forEach((pI) => {
             ret.push(
                 <div key={pI.plugin.name} style={{ display: 'inline-block' }}>
                     <div

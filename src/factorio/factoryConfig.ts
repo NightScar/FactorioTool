@@ -16,6 +16,13 @@ export interface PluginConfig {
 
 const factory: FactoryConfig[] = [
     {
+        name: '2级工厂',
+        icon: 'factory2',
+        speed: 0.75,
+        space: 2,
+        iconPosition: [9, 0],
+    },
+    {
         name: '3级工厂',
         icon: 'factory3',
         speed: 1.25,

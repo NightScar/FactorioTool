@@ -1,43 +1,35 @@
-import { defineConfig } from 'umi';
+import { defineConfig } from '@umijs/max';
 
 export default defineConfig({
     antd: {},
-    nodeModulesTransform: {
-        type: 'none',
-    },
     layout: {
-        name: 'test',
-        locale: false
+        title: 'test',
+        locale: false,
     },
-    locale:{},
+    history: { type: 'hash' },
     routes: [
-        { 
-          path: '/', 
-          menu: {
-            flatMenu: true,
-          },
-          routes: [
-            {
-              path: '/',
-              redirect: '/formula',
-            },
-            { 
-              path: '/formula', 
-              component: '@/pages/index',
-              name: 'formula',
-              munu: {
-                name: '配方',
-              }
-            },
-            { 
-              path: '/analysis', 
-              name: 'ana',
-              component: '@/pages/ProductAnalysis',
-              munu: {
-                name: '产量',
-              }
-            }
-          ] 
+        {
+            path: '/',
+            redirect: '/formula',
+        },
+        {
+            path: '/formula',
+            component: '@/pages/index',
+            name: 'formula',
+            title: 'formula',
+        },
+        {
+            path: '/analysis',
+            name: 'ana',
+            component: '@/pages/ProductAnalysis',
+            title: 'analysis',
+        },
+        {
+            path: '/demo1',
+            name: 'demo1',
+            component: '@/pages/Demo1',
+            title: 'demo1',
         },
     ],
+    npmClient: 'yarn',
 });
