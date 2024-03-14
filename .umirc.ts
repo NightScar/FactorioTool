@@ -30,6 +30,12 @@ export default defineConfig({
             component: '@/pages/Demo1',
             title: 'demo1',
         },
+        {
+            path: '/productTree',
+            name: '生产树',
+            component: '@/pages/ProductTree',
+            title: '生产树',
+        },
     ],
     npmClient: 'yarn',
 });

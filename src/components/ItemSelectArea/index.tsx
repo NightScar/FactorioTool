@@ -5,6 +5,7 @@ import { Divider, Tag } from 'antd';
 import { makeAutoObservable } from 'mobx';
 import { observer } from 'mobx-react-lite';
 import React from 'react';
+import { GraphData, NodeUserModel, EdgeUserModel } from '@antv/g6'
 
 export class ItemContainer {
     itemPairList: { item: Item; num: number }[] = [];
@@ -45,6 +46,18 @@ export class ItemContainer {
 
     public clear() {
         this.itemPairList.splice(0, this.itemPairList.length);
+    }
+
+    public get fullGraphData(): GraphData {
+        let nodes: NodeUserModel[] = [];
+        let edges: EdgeUserModel[] = [];
+        const i = (item: Item) => { 
+            
+        }
+        return {
+            nodes,
+            edges,
+        }
     }
 }
 
