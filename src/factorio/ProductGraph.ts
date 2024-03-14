@@ -35,9 +35,11 @@ export const simpleTreeMapper = (
     return {
         id: tree.id + v4(),
         data: {
-            type: 'rect-node',
+            type: 'image-node',
+            itemIconPosition: tree.itemNodes.item.iconPosition,
             label: tree.itemNodes.item.name + ' ' + tree.itemNodes.num,
             isRoot: isRoot,
+            itemNum: tree.itemNodes.num,
         },
         children: tree.children.map((c) => simpleTreeMapper(c, false)),
     };

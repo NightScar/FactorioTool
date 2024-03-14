@@ -1,7 +1,35 @@
 import ManagerTool from '@/factorio/ManagerTool';
 import { itemBuildTree, simpleTreeMapper } from '@/factorio/ProductGraph';
-import { Graph, extend } from '@antv/g6';
+import { Graph, NodeDisplayModel, NodeModel, extend } from '@antv/g6';
 import { useEffect, useRef } from 'react';
+
+const nodeFun: (data: NodeModel) => NodeDisplayModel = (data) => {
+    return {
+        id: data.id,
+        data: {
+            ...data,
+            type: 'image-node',
+            keyShape: {
+                src: '/icon/Iconsheet_32.png',
+                width: 34,
+                height: 34,
+                // clipPath: 'circle(40%)',
+                clipCfg: {
+                    type: 'rect',
+                    show: true,
+                },
+            },
+            labelShape: {
+                position: 'bottom',
+                maxWidth: '500%',
+            },
+            badgeShapes: {
+                text: data.itemNum,
+                position: 'bottom',
+            },
+        },
+    };
+};
 
 const ProductTreePage = () => {
     const graphRef = useRef<HTMLDivElement>();
@@ -17,9 +45,9 @@ const ProductTreePage = () => {
         const data = simpleTreeMapper(tree, true);
 
         const G = extend(Graph, {
-            // layouts: {
-            //     'compact-layout': Extensions.compactBox,
-            // },
+            nodes: {
+                // 'image-node': Extensions.Node
+            },
         });
 
         const graph = new G({
@@ -37,6 +65,7 @@ const ProductTreePage = () => {
                 type: 'compactBox',
                 direction: 'TB',
             },
+            node: nodeFun,
         });
     }, []);
 
