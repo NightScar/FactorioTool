@@ -1,7 +1,24 @@
 import ManagerTool from '@/factorio/ManagerTool';
 import { itemBuildTree, simpleTreeMapper } from '@/factorio/ProductGraph';
-import { Graph, extend } from '@antv/g6';
+import { Graph, NodeDisplayModel, NodeModel, extend } from '@antv/g6';
 import { useEffect, useRef } from 'react';
+
+const nodeExt = (inputData: NodeModel): NodeDisplayModel => {
+    const { id, data } = inputData;
+    let ret = {
+        id: id,
+        data: {
+            ...data,
+            type: 'rect-node',
+            iconShape: {
+                src: '/icon/speed3.png',
+                width: 34,
+                height: 34,
+            },
+        },
+    };
+    return ret;
+};
 
 const ProductTreePage = () => {
     const graphRef = useRef<HTMLDivElement>();
@@ -24,12 +41,13 @@ const ProductTreePage = () => {
 
         const graph = new G({
             container: graphRef.current,
-            width: 800,
-            height: 600,
+            width: 1400,
+            height: 800,
             data: {
                 type: 'treeData',
                 value: data,
             },
+            // node: nodeExt,
             modes: {
                 default: ['drag-canvas', 'zoom-canvas', 'drag-node'],
             },

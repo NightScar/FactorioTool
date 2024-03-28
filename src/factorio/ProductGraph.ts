@@ -1,5 +1,5 @@
 import FactoryDefinition from '@/factorio/Factory';
-import { TreeData } from '@antv/g6';
+import { EdgeUserModel, NodeUserModel, TreeData } from '@antv/g6';
 import { v4 } from 'uuid';
 import Item from './Item';
 import ManagerTool from './ManagerTool';
@@ -38,25 +38,75 @@ export const simpleTreeMapper = (
             type: 'rect-node',
             label: tree.itemNodes.item.name + ' ' + tree.itemNodes.num,
             isRoot: isRoot,
+            iconShape: {
+                src:
+                    '/icon/item/' +
+                    tree.itemNodes.item.iconPosition[0] +
+                    '_' +
+                    tree.itemNodes.item.iconPosition[1] +
+                    '.png',
+                width: 34,
+                height: 34,
+            },
+            badgeShapes: [
+                {
+                    text: tree.itemNodes.num.toString(),
+                    position: 'top',
+                },
+            ],
         },
         children: tree.children.map((c) => simpleTreeMapper(c, false)),
     };
 };
 
-export interface ProductGraph {
-    itemNodes: { item: Item; num: number }[];
-    factoryNodes: {
-        productItem: Item;
-        factory: FactoryDefinition;
-        factoryNum: number;
-    }[];
-    inputEdges: { source: Item; target: Item; inputNum: number }[]; // source是子物品, target是生产的父物品, 用来定位唯一的工厂
-    outputEdges: {
-        source: FactoryDefinition;
-        target: Item;
-        outputNum: number;
-    }[];
+// 物品节点的Node
+export interface ItemNodeUserModel extends NodeUserModel {
+    xType: 'item';
+    item: Item;
+    itemNum: number;
 }
+
+export interface FactoryNodeUserModel extends NodeUserModel {
+    xType: 'factory';
+    factory: FactoryDefinition;
+    productTarget: Item;
+}
+
+export interface FactoryInputEdgeUserModel extends EdgeUserModel {
+    xType: 'factoryInput';
+    inputItem: Item;
+    targetItem: Item;
+    inputNum: number;
+}
+
+export interface FactoryOutputEdgeUserModel extends EdgeUserModel {
+    xType: 'factoryOutput';
+    targetItem: Item;
+    targetNum: number;
+}
+
+export interface ProductGraph {
+    itemNodes: ItemNodeUserModel[];
+    factoryNodes: FactoryNodeUserModel[];
+    inputEdges: FactoryInputEdgeUserModel[]; // source是子物品, target是生产的父物品, 用来定位唯一的工厂
+    outputEdges: FactoryOutputEdgeUserModel[];
+}
+
+export const emptyProductGraph = (): ProductGraph => {
+    return {
+        itemNodes: [],
+        factoryNodes: [],
+        inputEdges: [],
+        outputEdges: [],
+    };
+};
+
+export const addTreeToProductGraph: (
+    graph: ProductGraph,
+    tree: ProductTreeElement,
+) => ProductGraph = (graph, tree) => {
+    return graph;
+};
 
 /**
  * 生成一个物品的生产图, 不递归深度
