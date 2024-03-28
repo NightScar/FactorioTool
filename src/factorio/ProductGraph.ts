@@ -1,5 +1,5 @@
 import FactoryDefinition from '@/factorio/Factory';
-import { EdgeUserModel, NodeUserModel, TreeData } from '@antv/g6';
+import { EdgeUserModel, GraphData, NodeUserModel, TreeData } from '@antv/g6';
 import { v4 } from 'uuid';
 import Item from './Item';
 import ManagerTool from './ManagerTool';
@@ -86,18 +86,40 @@ export interface FactoryOutputEdgeUserModel extends EdgeUserModel {
 }
 
 export interface ProductGraph {
-    itemNodes: ItemNodeUserModel[];
-    factoryNodes: FactoryNodeUserModel[];
-    inputEdges: FactoryInputEdgeUserModel[]; // source是子物品, target是生产的父物品, 用来定位唯一的工厂
-    outputEdges: FactoryOutputEdgeUserModel[];
+    itemNodes: { [key: string]: ItemNodeUserModel };
+    factoryNodes: { [key: string]: FactoryNodeUserModel };
+    inputEdges: { [key: string]: FactoryInputEdgeUserModel }; // source是子物品, target是生产的父物品, 用来定位唯一的工厂
+    outputEdges: { [key: string]: FactoryOutputEdgeUserModel };
 }
 
 export const emptyProductGraph = (): ProductGraph => {
     return {
-        itemNodes: [],
-        factoryNodes: [],
-        inputEdges: [],
-        outputEdges: [],
+        itemNodes: {},
+        factoryNodes: {},
+        inputEdges: {},
+        outputEdges: {},
+    };
+};
+
+export const productGraphToGraphData = (g: ProductGraph): GraphData => {
+    let n: NodeUserModel[] = [];
+    let e: EdgeUserModel[] = [];
+    for (const key in g.itemNodes) {
+        n.push(g.itemNodes[key]);
+    }
+    for (const key in g.factoryNodes) {
+        n.push(g.factoryNodes[key]);
+    }
+    for (const key in g.inputEdges) {
+        e.push(g.inputEdges[key]);
+    }
+    for (const key in g.outputEdges) {
+        e.push(g.outputEdges[key]);
+    }
+
+    return {
+        nodes: n,
+        edges: e,
     };
 };
 
@@ -105,6 +127,77 @@ export const addTreeToProductGraph: (
     graph: ProductGraph,
     tree: ProductTreeElement,
 ) => ProductGraph = (graph, tree) => {
+    const defaultFactory =
+        ManagerTool.getInstance().getAllFactoryDefinition()[0];
+    // 处理物品节点 --------------------------------------------------------------------
+    // item node id = item.name
+    let itemId = tree.itemNodes.item.name;
+    let itemNode = graph.itemNodes[itemId];
+    if (itemNode == undefined) {
+        graph.itemNodes[itemId] = {
+            id: itemId,
+            data: {},
+            xType: 'item',
+            item: tree.itemNodes.item,
+            itemNum: tree.itemNodes.num,
+        };
+    } else {
+        itemNode.itemNum += tree.itemNodes.num;
+    }
+    // ---- break;
+    if (tree.children == undefined || tree.children.length == 0) {
+        return graph;
+    }
+
+    // 处理工厂的节点 ----------------------------------------------------------------------
+    let factoryId = 'factory_' + itemId;
+    let facotryNode = graph.factoryNodes[factoryId];
+    if (facotryNode == undefined) {
+        graph.factoryNodes[factoryId] = {
+            id: factoryId,
+            data: {},
+            xType: 'factory',
+            productTarget: tree.itemNodes.item,
+            factory: defaultFactory,
+        };
+    }
+    // 处理工厂到物品的边 -----------------------------------------------------------------
+    let factoryOutputId = factoryId + '_edge';
+    let factoryOutputEdge = graph.outputEdges[factoryOutputId];
+    if (factoryOutputEdge == undefined) {
+        graph.outputEdges[factoryOutputId] = {
+            id: factoryOutputId,
+            data: {},
+            xType: 'factoryOutput',
+            targetItem: tree.itemNodes.item,
+            targetNum: tree.itemNodes.num,
+            source: factoryId,
+            target: itemId,
+        };
+    } else {
+        factoryOutputEdge.targetNum += tree.itemNodes.num;
+    }
+    // 处理子物品到工厂的边 -----------------------------------------------------------------
+    tree.children.forEach((t) => {
+        let factoryInputId = t.itemNodes.item.name + '_' + factoryId;
+        let factoryInputEdge = graph.inputEdges[factoryInputId];
+        if (factoryInputEdge == undefined) {
+            graph.inputEdges[factoryInputId] = {
+                id: factoryInputId,
+                data: {},
+                xType: 'factoryInput',
+                inputItem: t.itemNodes.item,
+                inputNum: t.itemNodes.num,
+                targetItem: tree.itemNodes.item,
+                source: t.itemNodes.item.name,
+                target: factoryId,
+            };
+        } else {
+            factoryInputEdge.inputNum += t.itemNodes.num;
+        }
+        addTreeToProductGraph(graph, t);
+    });
+
     return graph;
 };
 
